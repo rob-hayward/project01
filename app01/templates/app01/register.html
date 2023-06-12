@@ -1,0 +1,15 @@
+{% extends 'app01/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="register-form-container">
+ <a href="{% url 'app01:home' %}" class="circle-button">Project01</a>
+  <h4>This crucial step guarantees your individual representation and preserves your journey through Project01.</h4>
+  <form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <button type="submit" class="small-circle-button">Register</button>
+  </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,18 @@
+{% extends 'app01/base.html' %}
+{% block content %}
+
+<div class="text-center my-5">
+    {% if user.is_authenticated %}
+        <h3>Welcome {{ user.userprofile.preferred_name }}, you are 1 individual in a community of {{ users_count }}. <br>Please click on the Project01 icon to continue on your journey.</h3>
+        {% if current_question.id %}
+        <a href="{% url 'app01:propose_question' parent_question_id=current_question.id %}" class="circle-button">Project01</a>
+        {% else %}
+        <a href="{% url 'app01:propose_question' %}" class="circle-button">Project01</a>
+        {% endif %}
+    {% else %}
+        <h3 class="mt-3">Welcome to Project01! A community of {{ users_count }} individuals collaborating towards a better World. </h3>
+        <p>Please <a href="{% url 'app01:login' %}">login</a> or <a href="{% url 'app01:register' %}">register</a> to continue.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

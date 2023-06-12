@@ -1,0 +1,120 @@
+{% extends 'app01/base.html' %}
+
+{% block content %}
+<h2>Proposed Changes</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Path to Root</th>
+      <th>Main Tag</th>
+      <th>Question Text</th>
+      <th>Votes/Total Users</th>
+      <th>Participation (%)</th>
+      <th>Approve/Reject Votes</th>
+      <th>Approval Rating (%)</th>
+      <th>Vote</th>
+      <th>View Details & Discussion</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for question in proposed_questions %}
+    <tr>
+      <td class="path-to-root">
+        {% for tag in question.question_path %}
+            {{ tag.name }}
+            {% if not forloop.last %} > {% endif %}
+        {% endfor %}
+      </td>
+      <td class="main-tag">{{ question.main_tag.name }}</td>
+      <td class="question-text">{{ question.question_text }}</td>
+      <td class="vote-count">{{ question.total_votes }} / {{ total_users }}</td>
+      <td class="participation-percentage">{{ question.participation_percentage|floatformat:1 }}%</td>
+      <td class="votes-approve-reject">{{ question.total_approve_votes }} / {{ question.total_reject_votes }}</td>
+      <td class="approval-percentage">{{ question.approval_rating|floatformat:1 }}%</td>
+      <td>
+        <form class="approve-form" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="question_id" value="{{ question.id }}">
+          <select name="vote" id="vote-{{ question.id }}">
+            <option value="" {% if question.user_vote is None %}selected{% endif %}>----</option>
+            <option value="True" {% if question.user_vote is True %}selected{% endif %}>Approve</option>
+            <option value="False" {% if question.user_vote is False %}selected{% endif %}>Reject</option>
+          </select>
+        </form>
+      </td>
+      <td>
+        <a href="{% url 'question_detail' question.id %}">View & Discuss</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="9">No proposed changes yet.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script>
+  $(document).ready(function(){
+    $('.approve-form select').change(function(event){
+      event.preventDefault();
+      console.log("Dropdown selection changed.");
+
+      var form = $(this).closest('form')[0];
+      var formData = new FormData(form);
+
+      console.log("Form data: ", formData);
+
+      $.ajax({
+        url: "{% url 'submit_vote' %}",
+        type: 'post',
+        data: formData,
+        headers: {'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()},
+        processData: false,
+        contentType: false,
+        beforeSend: function() {
+          console.log("Sending AJAX request...");
+        },
+        success: function(response) {
+          console.log("AJAX request successful. Response: ", response);
+
+          // Ensure form is a jQuery object
+          var $form = $(form);
+
+          // Attempt to update vote count and percentage approval...
+          console.log("Attempting to update vote count and percentage approval...");
+
+          var voteCountElement = $form.closest('tr').find('.vote-count');
+          console.log("Vote count element: ", voteCountElement);
+          voteCountElement.text(response.total_votes + " / " + response.total_users);
+
+          var participationPercentageElement = $form.closest('tr').find('.participation-percentage');
+          console.log("Participation percentage element: ", participationPercentageElement);
+          participationPercentageElement.text(response.participation_percentage.toFixed(1) + '%');
+
+          var votesApproveRejectElement = $form.closest('tr').find('.votes-approve-reject');
+          console.log("Approve/Reject votes element: ", votesApproveRejectElement);
+          votesApproveRejectElement.text(response.total_approve_votes + " / " + response.total_reject_votes);
+
+          var approvalPercentageElement = $form.closest('tr').find('.approval-percentage');
+          console.log("Approval percentage element: ", approvalPercentageElement);
+          approvalPercentageElement.text(response.approval_rating.toFixed(1) + '%');
+
+          console.log("Update attempt finished.");
+        },
+
+        error: function(jqXHR, textStatus, errorThrown) {
+          console.log("AJAX request failed. ", textStatus, errorThrown);
+        },
+        complete: function() {
+          console.log("AJAX request completed.");
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,29 @@
+{% extends 'app01/base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="account-form-container">
+<a href="{% url 'app01:home' %}" class="circle-button">Project01</a>
+<h2>Your Account</h2>
+
+<h3>Edit Profile</h3>
+<form method="post">
+    {% csrf_token %}
+    {{ user_profile_form|crispy }}
+    <button type="submit" name="user_profile_form" class="small-circle-button">Update</button>
+</form>
+
+<h3>Change Username</h3>
+<form method="post">
+    {% csrf_token %}
+    {{ username_form|crispy }}
+    <button type="submit" name="username_form" class="small-circle-button">Update</button>
+</form>
+
+<h3>Change Password</h3>
+<form method="post">
+    {% csrf_token %}
+    {{ password_change_form|crispy }}
+    <button type="submit" name="password_change_form" class="small-circle-button">Update</button>
+</form>
+</div>
+{% endblock %}
