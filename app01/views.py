@@ -12,25 +12,34 @@ from django.views.generic import ListView
 from .models import Question, BinaryVote
 from .forms import BinaryVoteForm
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from django.views.generic import DetailView
+
+
+class QuestionDetailView(DetailView):
+    model = Question
+    template_name = 'app01/question_detail.html'
 
 
 @login_required
 def propose_question(request, parent_question_id=None):
+    print("Entered propose_question function.")
     if request.method == 'POST':
         form = ProposeQuestionForm(request.POST)
+        print("Request is POST.")
         if form.is_valid():
+            print("Form is valid.")
             question = form.save(commit=False)
             question.creator = request.user
-            question.approved = False
             if parent_question_id is not None:
-                question.parent = get_object_or_404(Question, id=parent_question_id)
-            try:
-                question.save()
-                form.save_m2m()
-                return redirect('app01:proposed_changes')
-            except Exception as e:
-                # catch the exception here and do something, like logging it or showing an error message to user.
-                print(e)
+                question.parent_question = get_object_or_404(Question, id=parent_question_id)
+            question.save()
+            form.save_m2m()
+            print("Question saved.")
+            return redirect('app01:proposed_changes')
+        else:
+            print("Form is not valid.")
+            print(form.errors.as_ul())
     else:
         form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
     return render(request, 'app01/propose_question.html', {'form': form})
@@ -47,15 +56,22 @@ class ProposedChangesView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         total_users = User.objects.count()
+        proposed_questions = []
         for question in context['object_list']:
             total_votes = BinaryVote.objects.filter(question=question).count()
+            question.total_votes = total_votes
             question.participation_percentage = (total_votes / total_users) * 100
             total_approve_votes = BinaryVote.objects.filter(question=question, vote=True).count()
+            question.total_approve_votes = total_approve_votes
+            total_reject_votes = BinaryVote.objects.filter(question=question, vote=False).count()
+            question.total_reject_votes = total_reject_votes
             question.approval_rating = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
             try:
                 question.user_vote = BinaryVote.objects.get(user=self.request.user, question=question).vote
             except BinaryVote.DoesNotExist:
                 question.user_vote = None
+            proposed_questions.append(question)
+        context['proposed_questions'] = proposed_questions
         return context
 
 
@@ -82,10 +98,14 @@ def submit_vote(request):
                     BinaryVote.objects.create(user=request.user, question=question, vote=vote)
 
             total_votes = question.total_votes()
+            total_approve_votes = question.total_approve_votes()
+            total_reject_votes = question.total_reject_votes()
             participation_percentage = question.participation_percentage()
             approval_percentage = question.approval_percentage()
 
             return JsonResponse({'total_votes': total_votes,
+                                 'total_approve_votes': total_approve_votes,
+                                 'total_reject_votes': total_reject_votes,
                                  'participation_percentage': participation_percentage,
                                  'approval_percentage': approval_percentage})
         else:

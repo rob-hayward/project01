@@ -9,9 +9,10 @@
       <th>Path to Root</th>
       <th>Main Tag</th>
       <th>Question Text</th>
-      <th>Votes/Total Users</th>
+      <th>Total Votes</th>
       <th>Participation (%)</th>
-      <th>Approve/Reject Votes</th>
+      <th>Approve Votes</th>
+      <th>Reject Votes</th>
       <th>Approval Rating (%)</th>
       <th>Vote</th>
       <th>View Details & Discussion</th>
@@ -28,9 +29,10 @@
       </td>
       <td class="main-tag">{{ question.main_tag.name }}</td>
       <td class="question-text">{{ question.question_text }}</td>
-      <td class="vote-count">{{ question.total_votes }} / {{ total_users }}</td>
+      <td class="vote-count">{{ question.total_votes }}</td>
       <td class="participation-percentage">{{ question.participation_percentage|floatformat:1 }}%</td>
-      <td class="votes-approve-reject">{{ question.total_approve_votes }} / {{ question.total_reject_votes }}</td>
+      <td class="votes-approve">{{ question.total_approve_votes }}</td>
+      <td class="votes-reject">{{ question.total_reject_votes }}</td>
       <td class="approval-percentage">{{ question.approval_rating|floatformat:1 }}%</td>
       <td>
         <form class="approve-form" method="post">
@@ -44,7 +46,7 @@
         </form>
       </td>
       <td>
-        <a href="{% url 'question_detail' question.id %}">View & Discuss</a>
+        <a href="{% url 'app01:question_detail' question.id %}">View & Discuss</a>
       </td>
     </tr>
     {% empty %}
@@ -68,7 +70,7 @@
       console.log("Form data: ", formData);
 
       $.ajax({
-        url: "{% url 'submit_vote' %}",
+        url: "{% url 'app01:submit_vote' %}",
         type: 'post',
         data: formData,
         headers: {'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()},

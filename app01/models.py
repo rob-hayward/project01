@@ -56,7 +56,7 @@ class Question(models.Model):
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
                                         related_name='child_questions')
     question_text = models.TextField()
-    input_type = models.CharField(max_length=10, choices=[(type, type.value) for type in InputType])
+    input_type = models.CharField(max_length=30, choices=[(type.name, type.value) for type in InputType])
     main_tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='main_questions', null=True, blank=True) # main tag
     additional_tags = models.ManyToManyField(Tag, blank=True, related_name='additional_questions') # additional tags
     keywords = models.ManyToManyField(KeywordDefinition, related_name='questions')

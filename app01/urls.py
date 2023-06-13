@@ -13,6 +13,7 @@ urlpatterns = [
     path('propose_question/<int:parent_question_id>/', views.propose_question, name='propose_question'),
     path('proposed_changes/', views.ProposedChangesView.as_view(), name='proposed_changes'),
     path('submit_vote/', views.submit_vote, name='submit_vote'),
+    path('question_detail/<int:pk>/', views.QuestionDetailView.as_view(), name='question_detail'),
 ]
 
 

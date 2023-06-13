@@ -41,17 +41,16 @@ class ProposeQuestionForm(forms.ModelForm):
 
     parent_question = forms.ModelChoiceField(
         queryset=Question.objects.all(),
-        required=True,
+        required=False,  # Set the field as not required.
         widget=forms.Select(attrs={'class': 'form-control'}),
     )
 
     class Meta:
         model = Question
-        fields = ['parent_question', 'question_text', 'input_type', 'status', 'keywords']
+        fields = ['parent_question', 'question_text', 'input_type', 'keywords']  # Removed 'status' field.
 
     def __init__(self, *args, **kwargs):
         super(ProposeQuestionForm, self).__init__(*args, **kwargs)
-        self.fields['status'].initial = QuestionStatus.PROPOSED.value
         self.fields['input_type'].initial = InputType.YES_NO.name
 
         parent_question_id = self.initial.get('parent_question')
@@ -64,17 +63,11 @@ class ProposeQuestionForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-
-        if not cleaned_data.get('existing_tags') and not cleaned_data.get('new_tags'):
-            raise forms.ValidationError("You must select or propose a tag.")
-
-        if not cleaned_data.get('parent_question'):
-            raise forms.ValidationError("You must select a parent question.")
-
         return cleaned_data
 
     def save(self, commit=False):  # Notice commit=False here.
         question = super().save(commit=False)
+        question.status = QuestionStatus.PROPOSED.value  # Set the status directly
 
         if self.cleaned_data.get('new_tags'):
             new_tags_list = self.cleaned_data.get('new_tags').split(',')
@@ -86,14 +79,10 @@ class ProposeQuestionForm(forms.ModelForm):
             for existing_tag in self.cleaned_data.get('existing_tags'):
                 question.tags.add(existing_tag)
 
-        # Since proposing a new main tag is mandatory, create a new Tag object
         main_tag, created = Tag.objects.get_or_create(
             name=self.cleaned_data['new_main_tag'])
+        question.main_tag = main_tag
 
-        question.main_tag = main_tag  # set the main tag
-        question.parent_question = self.cleaned_data['parent_question']
-
-        # If keywords and definitions are filled, create new KeywordDefinition objects
         if self.cleaned_data.get('keywords') and self.cleaned_data.get('definitions'):
             keywords = self.cleaned_data.get('keywords')
             definitions = self.cleaned_data.get('definitions').split('\n')
@@ -106,7 +95,6 @@ class ProposeQuestionForm(forms.ModelForm):
                     keyword_def.save()
                 question.keyword_definitions.add(keyword_def)
 
-        # If keywords is filled, add these to the question
         if self.cleaned_data.get('keywords'):
             for keyword in self.cleaned_data.get('keywords'):
                 question.keyword_definitions.add(keyword)
