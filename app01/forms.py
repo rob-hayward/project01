@@ -1,8 +1,44 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from .models import UserProfile, InputType
+from .models import UserProfile, AnswerType, ProposalVote, VoteType
 from django import forms
-from .models import Question, QuestionStatus, Tag, KeywordDefinition
+from .models import Question, Status, Tag, KeywordDefinition
+from django_countries.fields import CountryField
+from django_countries.widgets import CountrySelectWidget
+
+
+class ChangeStatusForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ['status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].widget = forms.Select(choices=[(status.name, status.value) for status in Status if status != Status.PROPOSED])
+
+
+class ProposalVoteForm(forms.ModelForm):
+    question_id = forms.IntegerField(widget=forms.HiddenInput())
+    vote = forms.ChoiceField(choices=VoteType.choices(), widget=forms.RadioSelect, required=False)
+
+    class Meta:
+        model = ProposalVote
+        fields = ['question_id', 'vote']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def clean_question_id(self):
+        question_id = self.cleaned_data['question_id']
+        question = Question.objects.filter(id=question_id).first()
+        if not question:
+            raise forms.ValidationError("Question does not exist")
+        return question
+
+    def save(self, *args, **kwargs):
+        self.instance.user = self.user
+        return super().save(*args, **kwargs)
 
 
 class BinaryVoteForm(forms.Form):
@@ -24,7 +60,7 @@ class BinaryVoteForm(forms.Form):
 
 
 class ProposeQuestionForm(forms.ModelForm):
-    input_type = forms.ChoiceField(choices=[(type.name, type.value) for type in InputType], widget=forms.Select())
+    answer_type = forms.ChoiceField(choices=[(type.name, type.value) for type in AnswerType], widget=forms.Select())
     existing_tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         required=False,
@@ -47,11 +83,11 @@ class ProposeQuestionForm(forms.ModelForm):
 
     class Meta:
         model = Question
-        fields = ['parent_question', 'question_text', 'input_type', 'keywords']  # Removed 'status' field.
+        fields = ['parent_question', 'question_text', 'answer_type', 'keywords']  # Removed 'status' field.
 
     def __init__(self, *args, **kwargs):
         super(ProposeQuestionForm, self).__init__(*args, **kwargs)
-        self.fields['input_type'].initial = InputType.YES_NO.name
+        self.fields['answer_type'].initial = AnswerType.BINARY.name
 
         parent_question_id = self.initial.get('parent_question')
         if parent_question_id:
@@ -67,7 +103,7 @@ class ProposeQuestionForm(forms.ModelForm):
 
     def save(self, commit=False):  # Notice commit=False here.
         question = super().save(commit=False)
-        question.status = QuestionStatus.PROPOSED.value  # Set the status directly
+        question.status = Status.PROPOSED.value  # Set the status directly
 
         if self.cleaned_data.get('new_tags'):
             new_tags_list = self.cleaned_data.get('new_tags').split(',')
@@ -110,7 +146,11 @@ class UserRegisterForm(UserCreationForm):
     address = forms.CharField()
     city = forms.CharField()
     post_code = forms.CharField()
-    country = forms.CharField()
+    country = CountryField(blank_label='(select country)').formfield(
+        widget=CountrySelectWidget(attrs={
+            'class': 'custom-select d-block w-100',
+        }),
+    )
     phone_number = forms.CharField()
     preferred_name = forms.CharField()
 

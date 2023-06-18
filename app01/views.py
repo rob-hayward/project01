@@ -2,23 +2,83 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, QuestionStatus
+from .models import UserProfile, Status, ProposalVote, VoteType
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.generic import ListView
-from .models import Question, BinaryVote
-from .forms import BinaryVoteForm
+from .models import Question, ProposalVoteData
+from .forms import BinaryVoteForm, ProposalVoteForm, ChangeStatusForm
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView
+
+from django.http import HttpResponseForbidden
+
+
+@login_required
+def update_status(request, pk):
+    # Check if the user is an admin
+    if not request.user.is_staff:
+        return HttpResponseForbidden()
+
+    if request.method == 'POST':
+        question = get_object_or_404(Question, pk=pk)
+        form = ChangeStatusForm(request.POST, instance=question)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Status has been updated!')
+        else:
+            messages.error(request, 'An error occurred.')
+        return redirect('app01:approved_changes')
+
+
+class ApprovedChangesView(ListView):
+    model = Question
+    template_name = 'app01/approved_changes.html'
+    context_object_name = 'questions'  # Change this to avoid confusion in the template
+
+    def get_queryset(self):
+        return Question.objects.filter(status=Status.APPROVED.value)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['forms'] = {question.id: ChangeStatusForm(instance=question) for question in context['questions']}
+        return context
 
 
 class QuestionDetailView(DetailView):
     model = Question
     template_name = 'app01/question_detail.html'
+
+
+class ProposedChangesView(ListView):
+    model = Question
+    template_name = 'app01/proposed_changes.html'
+
+    def get_queryset(self):
+        return Question.objects.filter(status=Status.PROPOSED.value)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_users'] = UserProfile.objects.filter(is_live=True).count()
+        proposed_questions = []
+        for question in context['object_list']:
+            stats, created = ProposalVoteData.objects.get_or_create(question=question)
+            question.total_votes = stats.total_votes
+            question.participation_percentage = stats.participation_percentage
+            question.total_approve_votes = stats.total_approve_votes
+            question.total_reject_votes = stats.total_reject_votes
+            question.approval_percentage = stats.approval_percentage  # This line has changed.
+            try:
+                question.user_vote = ProposalVote.objects.get(user=self.request.user, question=question).vote
+            except ProposalVote.DoesNotExist:
+                question.user_vote = None
+            proposed_questions.append(question)
+        context['proposed_questions'] = proposed_questions
+        return context
 
 
 @login_required
@@ -45,70 +105,42 @@ def propose_question(request, parent_question_id=None):
     return render(request, 'app01/propose_question.html', {'form': form})
 
 
-# view for users to view all questions with proposed status and vote to either approve or reject them
-class ProposedChangesView(ListView):
-    model = Question
-    template_name = 'app01/proposed_changes.html'
-
-    def get_queryset(self):
-        return Question.objects.filter(status=QuestionStatus.PROPOSED.value)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        total_users = User.objects.count()
-        proposed_questions = []
-        for question in context['object_list']:
-            total_votes = BinaryVote.objects.filter(question=question).count()
-            question.total_votes = total_votes
-            question.participation_percentage = (total_votes / total_users) * 100
-            total_approve_votes = BinaryVote.objects.filter(question=question, vote=True).count()
-            question.total_approve_votes = total_approve_votes
-            total_reject_votes = BinaryVote.objects.filter(question=question, vote=False).count()
-            question.total_reject_votes = total_reject_votes
-            question.approval_rating = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
-            try:
-                question.user_vote = BinaryVote.objects.get(user=self.request.user, question=question).vote
-            except BinaryVote.DoesNotExist:
-                question.user_vote = None
-            proposed_questions.append(question)
-        context['proposed_questions'] = proposed_questions
-        return context
-
-
 @login_required
 def submit_vote(request):
+    print(f"VoteType.NO_VOTE.value: {VoteType.NO_VOTE.value}")
     if request.method == 'POST':
-        form = BinaryVoteForm(request.POST)
+        form = ProposalVoteForm(request.POST, user=request.user)
+        print(f"Form data: {request.POST}")  # Print the raw form data
         if form.is_valid():
-            question_id = form.cleaned_data['question_id']
+            print("Form is valid")  # Print message if form is valid
+            question = form.cleaned_data['question_id']
             vote = form.cleaned_data['vote']
-            if vote == '':
-                vote = None
 
-            question = Question.objects.get(id=question_id)
-            try:
-                existing_vote = BinaryVote.objects.get(user=request.user, question=question)
-                if vote is None:
-                    existing_vote.delete()
-                else:
-                    existing_vote.vote = vote
-                    existing_vote.save()
-            except BinaryVote.DoesNotExist:
-                if vote is not None:
-                    BinaryVote.objects.create(user=request.user, question=question, vote=vote)
+            # Convert vote from string to int if needed
+            if vote == '1':
+                vote = VoteType.APPROVE.value
+            elif vote == '-1':
+                vote = VoteType.REJECT.value
+            elif vote == '':
+                vote = VoteType.NO_VOTE.value
+            else:
+                return JsonResponse({'error': 'Invalid vote value'}, status=400)
 
-            total_votes = question.total_votes()
-            total_approve_votes = question.total_approve_votes()
-            total_reject_votes = question.total_reject_votes()
-            participation_percentage = question.participation_percentage()
-            approval_percentage = question.approval_percentage()
+            # Create or update vote
+            ProposalVote.objects.submit_vote(user=request.user, question=question, vote=vote)
 
-            return JsonResponse({'total_votes': total_votes,
-                                 'total_approve_votes': total_approve_votes,
-                                 'total_reject_votes': total_reject_votes,
-                                 'participation_percentage': participation_percentage,
-                                 'approval_percentage': approval_percentage})
+            # Retrieve vote data
+            vote_data = ProposalVoteData.objects.get(question=question)
+            print(f"Vote data: {vote_data.__dict__}")  # Print the vote data object
+            return JsonResponse({
+                'total_votes': vote_data.total_votes,
+                'total_approve_votes': vote_data.total_approve_votes,
+                'total_reject_votes': vote_data.total_reject_votes,
+                'approval_percentage': vote_data.approval_percentage,
+                'participation_percentage': vote_data.participation_percentage,
+            })
         else:
+            print(f"Form errors: {form.errors}")  # Print form errors
             return JsonResponse({'error': 'Form is not valid'}, status=400)
 
 
@@ -138,8 +170,8 @@ def login_view(request):
 
 
 def home(request):
-    users_count = UserProfile.objects.filter(is_live=True, is_verified=True).count()
-    return render(request, 'app01/home.html', {'users_count': users_count})  # Updated template path
+    total_users = UserProfile.objects.filter(is_live=True, is_verified=True).count()
+    return render(request, 'app01/home.html', {'total_users': total_users})  # Updated template path
 
 
 def logout_view(request):

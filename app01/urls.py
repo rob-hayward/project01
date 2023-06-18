@@ -14,6 +14,9 @@ urlpatterns = [
     path('proposed_changes/', views.ProposedChangesView.as_view(), name='proposed_changes'),
     path('submit_vote/', views.submit_vote, name='submit_vote'),
     path('question_detail/<int:pk>/', views.QuestionDetailView.as_view(), name='question_detail'),
+    path('approved_changes/', views.ApprovedChangesView.as_view(), name='approved_changes'),
+    path('update_status/<int:pk>/', views.update_status, name='update_status'),
+
 ]
 
 
