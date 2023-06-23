@@ -1,0 +1,64 @@
+{% extends 'app01/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="question-form-container">
+  <a href="{% url 'app01:home' %}" class="circle-button">Project01</a>
+  <h2>Propose a new keyword and keyword definition that you {{ user.userprofile.preferred_name }} feel is import for our work on this site.</h2>
+  <h3>{{ form.path_to_root }}</h3>
+  <div id="questionForm">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.new_main_tag|as_crispy_field }}
+      <h4>Select existing tags:</h4>
+      {{ form.existing_tags|as_crispy_field }}
+      <!-- Add button for proposing new tags -->
+      <button type="button" id="addTagButton">Propose new tag</button>
+      <!-- Add this div that contains the input field for the new additional tags. Hide it initially -->
+      <div id="newAdditionalTagsForm">
+        <!-- This is where new tag inputs will be appended -->
+      </div>
+      {{ form.question_text|as_crispy_field }}
+      {{ form.answer_type|as_crispy_field }}
+      <h4>Select existing keywords:</h4>
+      {{ form.keywords|as_crispy_field }}
+      <button type="button" id="addKeywordButton">Propose new keyword</button>
+      <div id="keywordsContainer">
+        <!-- This is where new keyword-definition input pairs will be appended -->
+      </div>
+
+
+      <button type="submit" class="small-circle-button">Submit</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script>
+  $(document).ready(function(){
+    // Click event for the "Add Tag" button
+    $("#addTagButton").click(function() {
+      // HTML for the new tag input field
+      var newTagHtml = `
+        <input type="text" name="new_tags[]" placeholder="New tag" required>`;
+
+      // Append the new input field to the new additional tags form
+      $("#newAdditionalTagsForm").append(newTagHtml);
+    });
+
+    // Click event for the "Add Keyword" button
+    $("#addKeywordButton").click(function() {
+      // HTML for the new keyword-definition input pair
+      var newKeywordHtml = `
+        <div class="keyword-definition-pair">
+          <input type="text" name="keywords[]" placeholder="Keyword" required>
+          <input type="text" name="definitions[]" class="full-width" placeholder="Definition" required>
+        </div>`;
+
+      // Append the new input pair to the keywords container
+      $("#keywordsContainer").append(newKeywordHtml);
+    });
+  });
+</script>
+
+{% endblock %}

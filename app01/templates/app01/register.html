@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="register-form-container">
- <a href="{% url 'app01:home' %}" class="circle-button">Project01</a>
-  <h4>This crucial step guarantees your individual representation and preserves your journey through Project01.</h4>
+ <a href="{% url 'app01:home' %}" class="circle-button">Digiocracy</a>
+  <h4>This crucial step guarantees your individual representation and preserves your journey through Digiocracy.</h4>
   <form method="post">
     {% csrf_token %}
     {{ form|crispy }}

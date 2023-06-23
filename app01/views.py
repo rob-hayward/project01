@@ -1,21 +1,111 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, Status, ProposalVote, VoteType
+from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.views.generic import ListView
-from .models import Question, ProposalVoteData
-from .forms import BinaryVoteForm, ProposalVoteForm, ChangeStatusForm
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView
-
 from django.http import HttpResponseForbidden
+from .forms import KeyWordForm, QuestionForm
+from django import forms
+from django.shortcuts import render
+
+
+def keyword_detail(request, keyword):
+    # Fetch the keyword from the database
+    try:
+        keyword_obj = KeyWord.objects.get(word=keyword)
+    except KeyWord.DoesNotExist:
+        raise Http404("Keyword does not exist")
+
+    keyword_form = None
+    keyword_error = None
+
+    if request.method == 'POST':
+        keyword_form = KeyWordForm(request.POST)
+        if keyword_form.is_valid():
+            try:
+                keyword_form.save(creator=request.user)
+            except forms.ValidationError as e:
+                keyword_error = str(e)
+
+    else:
+        keyword_form = KeyWordForm()
+
+    context = {
+        'keyword': keyword_obj,
+        'keyword_form': keyword_form,
+        'keyword_error': keyword_error,
+    }
+
+    return render(request, 'app01/keyword_detail.html', context)
+
+
+def keyword_json(request):
+    try:
+        # Get the root keyword
+        root_keyword = KeyWord.objects.get(id=2)  # ids start from 1 not 0
+    except ObjectDoesNotExist:
+        return HttpResponse("Root keyword does not exist.", status=404)
+
+    # Recursive function to build the tree
+    def build_tree(keyword):
+        return {
+            "name": keyword.word,
+            "children": [build_tree(child) for child in keyword.children.all()],
+            "definition": keyword.definition.definition if hasattr(keyword, 'definition') else ""
+        }
+
+    # Build the tree and return as JSON
+    tree = build_tree(root_keyword)
+    return JsonResponse(tree, safe=False)
+
+
+def keyword_tree(request):
+    return render(request, 'app01/keyword_tree.html')
+
+
+@login_required
+def create_proposals(request):
+    keyword_form = None
+    question_form = None
+    keyword_error = None
+    question_error = None
+
+    if request.method == 'POST':
+        if 'keyword_submit' in request.POST:
+            keyword_form = KeyWordForm(request.POST)
+            if keyword_form.is_valid():
+                try:
+                    keyword_form.save(creator=request.user)
+                except forms.ValidationError as e:
+                    keyword_error = str(e)
+        elif 'question_submit' in request.POST:
+            question_form = QuestionForm(request.POST)
+            if question_form.is_valid():
+                try:
+                    question_form.save(creator=request.user)
+                except forms.ValidationError as e:
+                    question_error = str(e)
+    else:
+        keyword_form = KeyWordForm()
+        question_form = QuestionForm()
+
+    context = {
+        'keyword_form': keyword_form,
+        'question_form': question_form,
+        'keyword_error': keyword_error,
+        'question_error': question_error,
+    }
+    return render(request, 'app01/create_proposals.html', context)
 
 
 @login_required
@@ -83,22 +173,17 @@ class ProposedChangesView(ListView):
 
 @login_required
 def propose_question(request, parent_question_id=None):
-    print("Entered propose_question function.")
     if request.method == 'POST':
         form = ProposeQuestionForm(request.POST)
-        print("Request is POST.")
         if form.is_valid():
-            print("Form is valid.")
             question = form.save(commit=False)
             question.creator = request.user
             if parent_question_id is not None:
                 question.parent_question = get_object_or_404(Question, id=parent_question_id)
             question.save()
             form.save_m2m()
-            print("Question saved.")
             return redirect('app01:proposed_changes')
         else:
-            print("Form is not valid.")
             print(form.errors.as_ul())
     else:
         form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
@@ -107,15 +192,11 @@ def propose_question(request, parent_question_id=None):
 
 @login_required
 def submit_vote(request):
-    print(f"VoteType.NO_VOTE.value: {VoteType.NO_VOTE.value}")
     if request.method == 'POST':
         form = ProposalVoteForm(request.POST, user=request.user)
-        print(f"Form data: {request.POST}")  # Print the raw form data
         if form.is_valid():
-            print("Form is valid")  # Print message if form is valid
             question = form.cleaned_data['question_id']
             vote = form.cleaned_data['vote']
-
             # Convert vote from string to int if needed
             if vote == '1':
                 vote = VoteType.APPROVE.value
@@ -131,7 +212,6 @@ def submit_vote(request):
 
             # Retrieve vote data
             vote_data = ProposalVoteData.objects.get(question=question)
-            print(f"Vote data: {vote_data.__dict__}")  # Print the vote data object
             return JsonResponse({
                 'total_votes': vote_data.total_votes,
                 'total_approve_votes': vote_data.total_approve_votes,
@@ -140,8 +220,30 @@ def submit_vote(request):
                 'participation_percentage': vote_data.participation_percentage,
             })
         else:
-            print(f"Form errors: {form.errors}")  # Print form errors
             return JsonResponse({'error': 'Form is not valid'}, status=400)
+
+
+
+
+@login_required
+def propose_keyword(request, parent_question_id=None):
+    if request.method == 'POST':
+        form = ProposeKeywordForm(request.POST)
+        if form.is_valid():
+            keyword = form.save(commit=False)
+            question.creator = request.user
+            if parent_question_id is not None:
+                question.parent_question = get_object_or_404(Question, id=parent_question_id)
+            question.save()
+            form.save_m2m()
+            print("Question saved.")
+            return redirect('app01:proposed_changes')
+        else:
+            print("Form is not valid.")
+            print(form.errors.as_ul())
+    else:
+        form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
+    return render(request, 'app01/propose_question.html', {'form': form})
 
 
 def register(request):

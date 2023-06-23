@@ -1,0 +1,34 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h2>Create Proposal</h2>
+    <h3>Create Key Word and Definition</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ keyword_form|crispy }}
+        {% if keyword_error %}
+            <div class="alert alert-danger">
+                {{ keyword_error }}
+            </div>
+        {% endif %}
+        <button type="submit" name="keyword_submit">Submit Key Word</button>
+    </form>
+
+    <h3>Create Question</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ question_form|crispy }}
+        {% if question_error %}
+            <div class="alert alert-danger">
+                {{ question_error }}
+            </div>
+        {% endif %}
+        <button type="submit" name="question_submit">Submit Question</button>
+    </form>
+
+    <script>
+    // Add JavaScript here to detect when the user has finished typing in a word,
+    // make an AJAX request to check if it exists in the database, and highlight it if it does.
+    </script>
+{% endblock %}

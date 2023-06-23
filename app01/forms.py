@@ -1,144 +1,144 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from .models import UserProfile, AnswerType, ProposalVote, VoteType
-from django import forms
-from .models import Question, Status, Tag, KeywordDefinition
+from .models import UserProfile, Vote, VoteType, KeyWord, KeyWordDefinition, Question, AnswerType, QuestionTag
 from django_countries.fields import CountryField
 from django_countries.widgets import CountrySelectWidget
+from django import forms
+from django.contrib.contenttypes.models import ContentType
+from django import forms
+from .models import KeyWord, KeyWordDefinition, QuestionTag, Question
 
 
-class ChangeStatusForm(forms.ModelForm):
+class KeyWordForm(forms.ModelForm):
+    word = forms.CharField(max_length=255,
+                           widget=forms.TextInput(attrs={'placeholder': 'Choose any word from the Definition text to propose a new Key Word.'}),
+                           label="Keyword")
+    definition = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed Definition for this Key Word, within the context of its use here on Digiocracy.'}),
+                                 label="Keyword Definition")
+
     class Meta:
-        model = Question
-        fields = ['status']
+        model = KeyWordDefinition
+        fields = ['word', 'definition']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['status'].widget = forms.Select(choices=[(status.name, status.value) for status in Status if status != Status.PROPOSED])
+    def clean_word(self):
+        word = self.cleaned_data.get('word')
+        if KeyWord.objects.filter(word__iexact=word).exists():
+            raise forms.ValidationError('This keyword already exists.')
+        return word
+
+    def save(self, commit=True, creator=None):
+        word = self.cleaned_data.get('word')
+        keyword, created = KeyWord.objects.get_or_create(word=word, defaults={'creator': creator})
+        if not created and keyword.creator != creator:
+            raise forms.ValidationError('This keyword already exists.')
+        keyword_definition = super(KeyWordForm, self).save(commit=False)
+        keyword_definition.keyword = keyword
+        keyword_definition.creator = creator
+
+        if commit:
+            keyword_definition.save()
+
+        return keyword_definition
 
 
-class ProposalVoteForm(forms.ModelForm):
-    question_id = forms.IntegerField(widget=forms.HiddenInput())
+class QuestionForm(forms.ModelForm):
+    question_tag = forms.ModelMultipleChoiceField(
+        queryset=KeyWord.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Select one or more Key Words to create a unique Question Tag relating to your proposed question.',
+        label="Question Tag"
+    )
+    question_text = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed question here.'}),
+                                    label="Question Text")
+
+    answer_type = forms.ChoiceField(choices=[(answer_type.name, answer_type.value) for answer_type in AnswerType],
+                                    label="Answer Type")
+
+    class Meta:
+        model = QuestionTag
+        fields = ['question_tag', 'question_text', 'answer_type']
+
+    def save(self, commit=True, creator=None):  # Added creator parameter
+        question_text = self.cleaned_data.get('question_text')
+        question_tag = self.cleaned_data.get('question_tag')
+        answer_type = self.cleaned_data.get('answer_type')
+
+        question_tag = super(QuestionForm, self).save(commit=False)
+        question = Question.objects.create(question_text=question_text, answer_type=answer_type, creator=creator)  # Assign the creator here
+        question_tag.question = question
+
+        if commit:
+            question_tag.save()
+            self.save_m2m()  # This is needed to save ManyToManyField data
+
+        return question_tag
+
+
+class VoteForm(forms.ModelForm):
+    votable_object_id = forms.IntegerField(widget=forms.HiddenInput())
+    votable_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.filter(model__in=['keyword', 'keyword_definition', 'question_tag', 'question']),
+        widget=forms.HiddenInput()
+    )
     vote = forms.ChoiceField(choices=VoteType.choices(), widget=forms.RadioSelect, required=False)
 
     class Meta:
-        model = ProposalVote
-        fields = ['question_id', 'vote']
+        model = Vote
+        fields = ['votable_content_type', 'votable_object_id', 'vote']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
-
-    def clean_question_id(self):
-        question_id = self.cleaned_data['question_id']
-        question = Question.objects.filter(id=question_id).first()
-        if not question:
-            raise forms.ValidationError("Question does not exist")
-        return question
 
     def save(self, *args, **kwargs):
         self.instance.user = self.user
         return super().save(*args, **kwargs)
 
 
-class BinaryVoteForm(forms.Form):
-    NOVOTE = None
-    YES = True
-    NO = False
-    VOTE_CHOICES = [
-        (NOVOTE, '----'),
-        (YES, 'Yes'),
-        (NO, 'No'),
-    ]
+class ProposeKeywordForm(forms.ModelForm):
+    class Meta:
+        model = KeyWord
+        fields = ['word']
 
-    vote = forms.ChoiceField(
-        choices=VOTE_CHOICES,
-        initial=NOVOTE,
-        required=False,
-    )
-    question_id = forms.IntegerField(widget=forms.HiddenInput())
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.instance.creator = self.user
+        return super().save(*args, **kwargs)
+
+
+class ProposeKeywordDefinitionForm(forms.ModelForm):
+    class Meta:
+        model = KeyWordDefinition
+        fields = ['keyword', 'definition']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.instance.creator = self.user
+        return super().save(*args, **kwargs)
 
 
 class ProposeQuestionForm(forms.ModelForm):
     answer_type = forms.ChoiceField(choices=[(type.name, type.value) for type in AnswerType], widget=forms.Select())
-    existing_tags = forms.ModelMultipleChoiceField(
-        queryset=Tag.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-    )
-    new_tags = forms.CharField(widget=forms.HiddenInput(), required=False)
-    new_main_tag = forms.CharField(required=True)
-    keywords = forms.ModelMultipleChoiceField(
-        queryset=KeywordDefinition.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-    )
-    definitions = forms.CharField(required=False, widget=forms.Textarea, help_text='Enter definitions for new keywords here, one per line.')
-
-    parent_question = forms.ModelChoiceField(
-        queryset=Question.objects.all(),
-        required=False,  # Set the field as not required.
-        widget=forms.Select(attrs={'class': 'form-control'}),
-    )
+    question_text = forms.CharField(widget=forms.Textarea)
+    question_tag = forms.ModelChoiceField(queryset=QuestionTag.objects.all(), required=False)
 
     class Meta:
         model = Question
-        fields = ['parent_question', 'question_text', 'answer_type', 'keywords']  # Removed 'status' field.
+        fields = ['question_tag', 'question_text', 'answer_type']
 
     def __init__(self, *args, **kwargs):
-        super(ProposeQuestionForm, self).__init__(*args, **kwargs)
-        self.fields['answer_type'].initial = AnswerType.BINARY.name
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
 
-        parent_question_id = self.initial.get('parent_question')
-        if parent_question_id:
-            parent_question = Question.objects.get(id=parent_question_id)
-            path_to_root = ' > '.join([tag.name for tag in parent_question.question_path()])
-            self.path_to_root = f"Path: {path_to_root} > {parent_question.main_tag.name}"
-        else:
-            self.path_to_root = "Empty question tree. Please propose a root question"
-
-    def clean(self):
-        cleaned_data = super().clean()
-        return cleaned_data
-
-    def save(self, commit=False):  # Notice commit=False here.
-        question = super().save(commit=False)
-        question.status = Status.PROPOSED.value  # Set the status directly
-
-        if self.cleaned_data.get('new_tags'):
-            new_tags_list = self.cleaned_data.get('new_tags').split(',')
-            for new_tag in new_tags_list:
-                tag, created = Tag.objects.get_or_create(name=new_tag.strip())
-                question.tags.add(tag)
-
-        if self.cleaned_data.get('existing_tags'):
-            for existing_tag in self.cleaned_data.get('existing_tags'):
-                question.tags.add(existing_tag)
-
-        main_tag, created = Tag.objects.get_or_create(
-            name=self.cleaned_data['new_main_tag'])
-        question.main_tag = main_tag
-
-        if self.cleaned_data.get('keywords') and self.cleaned_data.get('definitions'):
-            keywords = self.cleaned_data.get('keywords')
-            definitions = self.cleaned_data.get('definitions').split('\n')
-
-            for keyword, definition in zip(keywords, definitions):
-                keyword_def, created = KeywordDefinition.objects.get_or_create(keyword=keyword.strip(), defaults={
-                    'definition': definition.strip()})
-                if not created and keyword_def.definition != definition.strip():
-                    keyword_def.definition = definition.strip()
-                    keyword_def.save()
-                question.keyword_definitions.add(keyword_def)
-
-        if self.cleaned_data.get('keywords'):
-            for keyword in self.cleaned_data.get('keywords'):
-                question.keyword_definitions.add(keyword)
-
-        if commit:
-            question.save()
-
-        return question
+    def save(self, *args, **kwargs):
+        self.instance.creator = self.user
+        return super().save(*args, **kwargs)
 
 
 class UserRegisterForm(UserCreationForm):
@@ -156,18 +156,19 @@ class UserRegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password1', 'password2']
+        fields = ['preferred_name', 'username', 'email', 'password1', 'password2']
 
     def __init__(self, *args, **kwargs):
         super(UserRegisterForm, self).__init__(*args, **kwargs)
-        self.fields['username'].label = 'Please choose a unique username to be addressed by whilst on this site'
+        self.fields['username'].label = 'Unique username.'
+        self.fields['preferred_name'].label = 'Please enter your preferred name to be addressed by whilst on this site.'
 
     def save(self, commit=True):
         user = super(UserRegisterForm, self).save(commit=False)
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
-            userprofile = UserProfile.objects.get(user=user)
+            userprofile = UserProfile.objects.create(user=user)  # Create UserProfile
             userprofile.preferred_name = self.cleaned_data['preferred_name']
             userprofile.address = self.cleaned_data['address']
             userprofile.city = self.cleaned_data['city']

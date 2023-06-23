@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -12,7 +14,9 @@ from django_countries.fields import CountryField
 from django.db.models import Avg, Count, StdDev
 
 
-USER_INACTIVE_PERIOD = 1000  # number of days
+USER_INACTIVE_PERIOD = 365  # number of days
+APPROVE_THRESHOLD = 50
+REJECT_THRESHOLD = 50
 
 
 class VoteType(Enum):
@@ -29,6 +33,13 @@ class VoteType(Enum):
         return cls.NO_VOTE.value
 
 
+class Status(Enum):
+    PROPOSED = 'proposed'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    ALTERNATIVE = 'alternative'
+
+
 class AnswerType(Enum):
     BINARY = 'BINARY'
     SCALE_DECIMAL = 'SCALE_DECIMAL'
@@ -36,67 +47,79 @@ class AnswerType(Enum):
     # Add other types as needed.
 
 
-class Status(Enum):
-    PROPOSED = 'proposed'
-    APPROVED = 'approved'
-    LIVE = 'live'
-    REJECTED = 'rejected'
+class Votable(models.Model):
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=20,
+        choices=[(status.name, status.value) for status in Status],
+        default=Status.PROPOSED.value
+    )
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True  # This makes Votable an abstract base class
+
+    def calculate_status(self):
+        vote_data = self.vote_set.aggregate(
+            total_votes=Count('id'),
+            total_approve_votes=Count('id', filter=models.Q(vote=VoteType.APPROVE.value)),
+            total_reject_votes=Count('id', filter=models.Q(vote=VoteType.REJECT.value)),
+        )
+        total_votes = vote_data['total_votes']
+        total_approve_votes = vote_data['total_approve_votes']
+        total_reject_votes = vote_data['total_reject_votes']
+
+        total_users = UserProfile.objects.filter(is_live=True).count()
+        participation_percentage = (total_votes / total_users) * 100 if total_users > 0 else 0
+        approval_percentage = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
+        rejection_percentage = (total_reject_votes / total_votes) * 100 if total_votes > 0 else 0
+
+        # Change the status if the thresholds are met
+        if participation_percentage >= 50:
+            if approval_percentage > APPROVE_THRESHOLD:
+                self.status = Status.APPROVED.value
+            elif rejection_percentage > REJECT_THRESHOLD:
+                self.status = Status.REJECTED.value
+
+        self.save()
+
+    def get_alternatives(self):
+        return self.children.filter(status=Status.ALTERNATIVE.value)
 
 
-class Tag(models.Model):
-    name = models.CharField(max_length=255)
+class KeyWord(Votable):
+    word = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
-        return self.name
+        return self.word
 
 
-class KeywordDefinition(models.Model):
-    keyword = models.CharField(max_length=255, unique=True)
+class KeyWordDefinition(Votable):
+    keyword = models.OneToOneField(KeyWord, on_delete=models.CASCADE, related_name='definition')
     definition = models.TextField()
-    creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    status = models.CharField(
-        max_length=20,
-        choices=[(status.name, status.value) for status in Status],
-        default=Status.PROPOSED.value
-    )
+    questions = models.ManyToManyField('Question', related_name='keyword_definitions')
 
     def __str__(self):
-        return self.keyword
+        return self.definition
 
 
-class Question(models.Model):
-    status = models.CharField(
-        max_length=20,
-        choices=[(status.name, status.value) for status in Status],
-        default=Status.PROPOSED.value
-    )
+class QuestionTag(Votable):
+    parent_tag = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_tags')
+    question = models.ForeignKey('Question', on_delete=models.CASCADE)
+    keywords = models.ManyToManyField(KeyWord)
+
+    def __str__(self):
+        return f'{", ".join([keyword.word for keyword in self.keywords.all()])}'
+
+
+class Question(Votable):
+    question_tag = models.ForeignKey(QuestionTag, on_delete=models.CASCADE, related_name="questions")
+    question_text = models.TextField()
     answer_type = models.CharField(
         max_length=30,
         choices=[(answer_type.name, answer_type.value) for answer_type in AnswerType],
         default=AnswerType.BINARY.name,
     )
-    parent_question = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True,
-                                        related_name='child_questions')
-    question_text = models.TextField()
-    main_tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='main_questions', null=True, blank=True)
-    additional_tags = models.ManyToManyField(Tag, blank=True, related_name='additional_questions')
-    keywords = models.ManyToManyField(KeywordDefinition, related_name='questions')
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    approval_threshold = models.IntegerField(default=100)  # Approval threshold
-    rejection_threshold = models.IntegerField(default=100)  # Rejection threshold
-    participation_threshold = models.IntegerField(default=100)  # Participation threshold
-
-    def check_question_status(self):  # New method
-        vote_data = ProposalVoteData.objects.get(question=self)
-        if vote_data.participation_percentage >= self.participation_threshold:
-            if vote_data.approval_percentage >= self.approval_threshold:
-                self.status = Status.APPROVED.value
-            elif vote_data.rejection_percentage >= self.rejection_threshold:
-                self.status = Status.REJECTED.value
-        self.save()
-
-    def get_additional_tags(self):
-        return self.additional_tags.all()
 
     def __str__(self):
         return self.question_text
@@ -105,66 +128,21 @@ class Question(models.Model):
         path = []
         question = self
         while question is not None:
-            path.append(question.main_tag)
-            question = question.parent_question
+            path.append(question.question_tag)
+            question = question.parent
         return path[::-1]  # reversed so that it starts from root
 
 
-class ProposalVoteManager(models.Manager):
-    def submit_vote(self, user, question, vote):
-        if vote == VoteType.NO_VOTE.value:  # if vote is "no-vote"
-            self.filter(user=user, question=question).delete()  # delete the existing vote if it exists
-            ProposalVoteData.update_vote_data(question)
-        else:
-            proposal_vote, created = self.update_or_create(
-                user=user,
-                question=question,
-                defaults={'vote': vote}  # sets vote value for new and existing objects
-            )
-
-
-class ProposalVote(models.Model):
+class Vote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    votable_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    votable_object_id = models.PositiveIntegerField()
+    votable = GenericForeignKey('votable_content_type', 'votable_object_id')
     vote = models.IntegerField(choices=VoteType.choices(), default=VoteType.default())
-    objects = ProposalVoteManager()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'question']
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        ProposalVoteData.update_vote_data(self.question)
-        self.question.check_question_status()
-
-
-class ProposalVoteData(models.Model):
-    question = models.OneToOneField(Question, on_delete=models.CASCADE, primary_key=True)
-    total_votes = models.IntegerField(default=0)
-    total_approve_votes = models.IntegerField(default=0)
-    total_reject_votes = models.IntegerField(default=0)
-    approval_percentage = models.FloatField(default=0)
-    rejection_percentage = models.FloatField(default=0)
-    participation_percentage = models.FloatField(default=0)
-
-    @classmethod
-    def update_vote_data(cls, question):
-        total_votes = ProposalVote.objects.filter(question=question).count()
-        total_approve_votes = ProposalVote.objects.filter(question=question, vote=VoteType.APPROVE.value).count()
-        total_reject_votes = ProposalVote.objects.filter(question=question, vote=VoteType.REJECT.value).count()
-        approval_percentage = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
-        rejection_percentage = (total_reject_votes / total_votes) * 100 if total_votes > 0 else 0
-        total_users = UserProfile.objects.filter(is_live=True).count()
-        participation_percentage = (total_votes / total_users) * 100 if total_users > 0 else 0
-
-        vote_data, created = cls.objects.get_or_create(question=question)
-        vote_data.total_votes = total_votes
-        vote_data.total_approve_votes = total_approve_votes
-        vote_data.total_reject_votes = total_reject_votes
-        vote_data.approval_percentage = approval_percentage
-        vote_data.rejection_percentage = rejection_percentage
-        vote_data.participation_percentage = participation_percentage
-        vote_data.save()
+        unique_together = ['user', 'votable_content_type', 'votable_object_id']
 
 
 class AnswerBinary(models.Model):
