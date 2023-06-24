@@ -3,7 +3,7 @@ function createRadialTree(data) {
   const width = 928;
   const height = width;
   const cx = width * 0.5; // adjust as needed to fit
-  const cy = height * 0.59; // adjust as needed to fit
+  const cy = height * 0.5; // adjust as needed to fit
   const radius = Math.min(width, height) / 2 - 30;
 
   // Create a radial tree layout. The layout’s first dimension (x)

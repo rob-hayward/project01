@@ -103,4 +103,24 @@ tr:hover {
     background-color: #f5f5f5;
 }
 
+.keyword {
+  cursor: pointer;
+}
+
+.keyword.approved {
+  color: green !important;
+}
+
+.keyword.proposed {
+  color: blue !important;
+}
+
+.keyword.rejected {
+  color: red !important;
+}
+
+#keywordTree {
+  overflow: auto;
+}
+
 

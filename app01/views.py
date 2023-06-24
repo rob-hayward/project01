@@ -17,6 +17,7 @@ from django.http import HttpResponseForbidden
 from .forms import KeyWordForm, QuestionForm
 from django import forms
 from django.shortcuts import render
+from django.shortcuts import redirect
 
 
 def keyword_detail(request, keyword):
@@ -33,7 +34,8 @@ def keyword_detail(request, keyword):
         keyword_form = KeyWordForm(request.POST)
         if keyword_form.is_valid():
             try:
-                keyword_form.save(creator=request.user)
+                new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)  # Pass the parent keyword
+                return redirect(new_keyword.keyword.get_absolute_url())  # Redirect to the new keyword detail view
             except forms.ValidationError as e:
                 keyword_error = str(e)
 

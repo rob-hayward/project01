@@ -11,10 +11,10 @@ from .models import KeyWord, KeyWordDefinition, QuestionTag, Question
 
 class KeyWordForm(forms.ModelForm):
     word = forms.CharField(max_length=255,
-                           widget=forms.TextInput(attrs={'placeholder': 'Choose any word from the Definition text to propose a new Key Word.'}),
-                           label="Keyword")
-    definition = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed Definition for this Key Word, within the context of its use here on Digiocracy.'}),
-                                 label="Keyword Definition")
+                           widget=forms.TextInput(attrs={'placeholder': 'Choose any word from the Definition text to propose a new Keyword.'}),
+                           label="Propose Keyword")
+    definition = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed Definition for this new Keyword, within the context of its use here on Digiocracy.'}),
+                                 label="Propose Keyword Definition")
 
     class Meta:
         model = KeyWordDefinition
@@ -26,7 +26,7 @@ class KeyWordForm(forms.ModelForm):
             raise forms.ValidationError('This keyword already exists.')
         return word
 
-    def save(self, commit=True, creator=None):
+    def save(self, commit=True, creator=None, parent=None):  # Add a parent parameter
         word = self.cleaned_data.get('word')
         keyword, created = KeyWord.objects.get_or_create(word=word, defaults={'creator': creator})
         if not created and keyword.creator != creator:
@@ -37,6 +37,8 @@ class KeyWordForm(forms.ModelForm):
 
         if commit:
             keyword_definition.save()
+            if parent:  # If a parent keyword is passed, add the new keyword as its child
+                parent.children.add(keyword)
 
         return keyword_definition
 

@@ -1,20 +1,25 @@
 {% extends "app01/base.html" %}
 {% load crispy_forms_tags %}
+{% load highlight_keywords %}
 
 {% block content %}
+    <h6>Keyword:</h6>
     <h1>{{ keyword.word }}</h1>
+    <h6>Keyword Definition:</h6>
     <p>
         {% if keyword.definition %}
-            {{ keyword.definition.definition }}
+            {{ keyword.definition.definition|highlight_keywords }}
         {% else %}
             "No definition available"
         {% endif %}
     </p>
 
-    <h3>Create Key Word and Definition</h3>
+
+    <h3>Create Keyword and Definition</h3>
     <form method="post">
         {% csrf_token %}
         {{ keyword_form|crispy }}
+        <input type="hidden" id="parent_id" name="parent_id" value="{{ keyword.id }}">
         {% if keyword_error %}
             <div class="alert alert-danger">
                 {{ keyword_error }}
@@ -22,9 +27,24 @@
         {% endif %}
         <button type="submit" name="keyword_submit">Submit Key Word</button>
     </form>
-    <script>
-    // Add JavaScript here to detect when the user has finished typing in a word,
-    // make an AJAX request to check if it exists in the database, and highlight it if it does.
+   <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
+                element.addEventListener('click', (event) => {
+                    let word = event.target.getAttribute('data-word');
+                    const status = event.target.className.split(' ')[1]; // This assumes the status is always the second class
+
+                    if (status === undefined) {
+                        event.preventDefault();
+                        const input = document.querySelector('#id_word'); // Replace 'id_word' with your actual input id
+                        if (input) {
+                            input.value = word.charAt(0).toUpperCase() + word.slice(1);
+                        }
+                    }
+                });
+            });
+        });
     </script>
+
 {% endblock %}
 
