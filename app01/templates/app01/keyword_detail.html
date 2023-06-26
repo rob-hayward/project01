@@ -6,7 +6,6 @@
     <div style="display: flex; align-items: baseline;">
         <h1 style="margin-right: 20px;">{{ keyword.word }}</h1>
 
-        <!-- Add a vote form -->
         <form class="vote-form" method="post">
             {% csrf_token %}
             <input type="hidden" name="votable_content_type" value="{{ votable_content_type }}">
@@ -18,10 +17,6 @@
                 <option value="0">No Vote</option>
             </select>
         </form>
-
-
-
-
     </div>
 
     <div class="keyword-stats">
@@ -84,19 +79,20 @@
                 });
             });
 
-            $('#vote').on('change', function(){
+                $('#vote').on('change', function(){
                 $.ajax({
                     url : "{% url 'app01:submit_vote' %}",
                     type : "POST",
                     data : $('.vote-form').serialize(),
 
                     success : function(json) {
-                        // update the keyword stats on successful vote
+                        // update the keyword stats and status on successful vote
                         $('#total_votes').text(json.total_votes);
                         $('#total_approve_votes').text(json.total_approve_votes);
                         $('#total_reject_votes').text(json.total_reject_votes);
                         $('#participation_percentage').text(json.participation_percentage);
                         $('#approval_percentage').text(json.approval_percentage);
+                        $('#status').text(json.status);  // Add this line to update the status
                     },
 
                     error : function(xhr,errmsg,err) {

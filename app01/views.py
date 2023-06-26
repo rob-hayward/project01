@@ -49,6 +49,7 @@ def submit_vote(request):
 
             votable_object = votable_content_type.get_object_for_this_type(id=votable_object_id)
             votable_object.calculate_status()
+            new_status = votable_object.calculate_status()
 
             data = {
                 'total_votes': votable_object.get_votes().count(),
@@ -56,6 +57,7 @@ def submit_vote(request):
                 'total_reject_votes': votable_object.get_votes().filter(vote=VoteType.REJECT.value).count(),
                 'participation_percentage': float(votable_object.participation_percentage),
                 'approval_percentage': float(votable_object.approval_percentage),
+                'status': new_status
             }
 
             return JsonResponse(data)

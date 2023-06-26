@@ -76,6 +76,7 @@ class Votable(models.Model):
             total_approve_votes=Count('id', filter=models.Q(vote=VoteType.APPROVE.value)),
             total_reject_votes=Count('id', filter=models.Q(vote=VoteType.REJECT.value)),
         )
+
         total_votes = vote_data['total_votes']
         total_approve_votes = vote_data['total_approve_votes']
         total_reject_votes = vote_data['total_reject_votes']
@@ -97,6 +98,8 @@ class Votable(models.Model):
                 self.status = Status.REJECTED.value
 
         self.save()
+
+        return self.status
 
     def get_votes(self):
         content_type = ContentType.objects.get_for_model(self)
