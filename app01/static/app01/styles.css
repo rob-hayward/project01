@@ -107,15 +107,15 @@ tr:hover {
   cursor: pointer;
 }
 
-.keyword.approved {
+.keyword.Approved {
   color: green !important;
 }
 
-.keyword.proposed {
+.keyword.Proposed {
   color: blue !important;
 }
 
-.keyword.rejected {
+.keyword.Rejected {
   color: red !important;
 }
 

@@ -13,6 +13,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django_countries.fields import CountryField
 from django.db.models import Avg, Count, StdDev
+from django.contrib.contenttypes.models import ContentType
 
 
 USER_INACTIVE_PERIOD = 365  # number of days
@@ -35,10 +36,10 @@ class VoteType(Enum):
 
 
 class Status(Enum):
-    PROPOSED = 'proposed'
-    APPROVED = 'approved'
-    REJECTED = 'rejected'
-    ALTERNATIVE = 'alternative'
+    PROPOSED = 'Proposed'
+    APPROVED = 'Approved'
+    REJECTED = 'Rejected'
+    ALTERNATIVE = 'Alternative'
 
 
 class AnswerType(Enum):
@@ -56,12 +57,21 @@ class Votable(models.Model):
         default=Status.PROPOSED.value
     )
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
+    participation_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    approval_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_votes = models.PositiveIntegerField(default=0)
+    total_approve_votes = models.PositiveIntegerField(default=0)
+    total_reject_votes = models.PositiveIntegerField(default=0)
 
     class Meta:
         abstract = True  # This makes Votable an abstract base class
 
     def calculate_status(self):
-        vote_data = self.vote_set.aggregate(
+        content_type = ContentType.objects.get_for_model(self.__class__)
+        vote_data = Vote.objects.filter(
+            votable_content_type=content_type,
+            votable_object_id=self.id
+        ).exclude(vote=VoteType.NO_VOTE.value).aggregate(
             total_votes=Count('id'),
             total_approve_votes=Count('id', filter=models.Q(vote=VoteType.APPROVE.value)),
             total_reject_votes=Count('id', filter=models.Q(vote=VoteType.REJECT.value)),
@@ -71,21 +81,47 @@ class Votable(models.Model):
         total_reject_votes = vote_data['total_reject_votes']
 
         total_users = UserProfile.objects.filter(is_live=True).count()
-        participation_percentage = (total_votes / total_users) * 100 if total_users > 0 else 0
-        approval_percentage = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
+        self.participation_percentage = (total_votes / total_users) * 100 if total_users > 0 else 0
+        self.approval_percentage = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
         rejection_percentage = (total_reject_votes / total_votes) * 100 if total_votes > 0 else 0
 
+        self.total_votes = total_votes
+        self.total_approve_votes = total_approve_votes
+        self.total_reject_votes = total_reject_votes
+
         # Change the status if the thresholds are met
-        if participation_percentage >= 50:
-            if approval_percentage > APPROVE_THRESHOLD:
+        if self.participation_percentage >= 50:
+            if self.approval_percentage > APPROVE_THRESHOLD:
                 self.status = Status.APPROVED.value
             elif rejection_percentage > REJECT_THRESHOLD:
                 self.status = Status.REJECTED.value
 
         self.save()
 
+    def get_votes(self):
+        content_type = ContentType.objects.get_for_model(self)
+        return Vote.objects.filter(votable_content_type=content_type, votable_object_id=self.id)
+
     def get_alternatives(self):
         return self.children.filter(status=Status.ALTERNATIVE.value)
+
+
+class Vote(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    votable_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    votable_object_id = models.PositiveIntegerField()
+    votable = GenericForeignKey('votable_content_type', 'votable_object_id')
+    vote = models.IntegerField(choices=VoteType.choices(), default=VoteType.default())
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'votable_content_type', 'votable_object_id']
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            self.votable.calculate_status()
 
 
 class KeyWord(Votable):
@@ -135,18 +171,6 @@ class Question(Votable):
             path.append(question.question_tag)
             question = question.parent
         return path[::-1]  # reversed so that it starts from root
-
-
-class Vote(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    votable_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    votable_object_id = models.PositiveIntegerField()
-    votable = GenericForeignKey('votable_content_type', 'votable_object_id')
-    vote = models.IntegerField(choices=VoteType.choices(), default=VoteType.default())
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['user', 'votable_content_type', 'votable_object_id']
 
 
 class AnswerBinary(models.Model):

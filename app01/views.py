@@ -1,16 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Count
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question
+from . import models
+from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question, Vote
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm
+from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm, VoteForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.generic import ListView
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, ContentType
 from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView
 from django.http import HttpResponseForbidden
@@ -18,34 +20,104 @@ from .forms import KeyWordForm, QuestionForm
 from django import forms
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.contrib.contenttypes.models import ContentType
+
+
+@login_required
+def submit_vote(request):
+    if request.method == 'POST':
+        form = VoteForm(request.POST, user=request.user)
+        if form.is_valid():
+            # Extract the user, votable_content_type, and votable_object_id from the form
+            user = request.user
+            votable_content_type = form.cleaned_data['votable_content_type']
+            votable_object_id = form.cleaned_data['votable_object_id']
+
+            # Try to get an existing vote from this user for this object
+            try:
+                vote = Vote.objects.get(user=user, votable_content_type=votable_content_type, votable_object_id=votable_object_id)
+            except Vote.DoesNotExist:
+                vote = None
+
+            if vote:
+                # If an existing vote is found, update it
+                vote.vote = form.cleaned_data['vote']
+                vote.save()
+            else:
+                # If no existing vote is found, create a new one
+                form.save()
+
+            votable_object = votable_content_type.get_object_for_this_type(id=votable_object_id)
+            votable_object.calculate_status()
+
+            data = {
+                'total_votes': votable_object.get_votes().count(),
+                'total_approve_votes': votable_object.get_votes().filter(vote=VoteType.APPROVE.value).count(),
+                'total_reject_votes': votable_object.get_votes().filter(vote=VoteType.REJECT.value).count(),
+                'participation_percentage': float(votable_object.participation_percentage),
+                'approval_percentage': float(votable_object.approval_percentage),
+            }
+
+            return JsonResponse(data)
+        else:
+            print(form.errors)
+            return JsonResponse({'error': 'Form is not valid'}, status=400)
 
 
 def keyword_detail(request, keyword):
     # Fetch the keyword from the database
-    try:
-        keyword_obj = KeyWord.objects.get(word=keyword)
-    except KeyWord.DoesNotExist:
-        raise Http404("Keyword does not exist")
-
+    keyword_obj = get_object_or_404(KeyWord, word=keyword)
     keyword_form = None
     keyword_error = None
+    vote = None
+
+    # Fetch the content type for the keyword model
+    votable_content_type = ContentType.objects.get_for_model(keyword_obj)
+
+    # Try to fetch the user's vote for the keyword
+    if request.user.is_authenticated:
+        vote = Vote.objects.filter(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user).first()
 
     if request.method == 'POST':
-        keyword_form = KeyWordForm(request.POST)
-        if keyword_form.is_valid():
-            try:
-                new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)  # Pass the parent keyword
-                return redirect(new_keyword.keyword.get_absolute_url())  # Redirect to the new keyword detail view
-            except forms.ValidationError as e:
-                keyword_error = str(e)
+        if 'keyword_submit' in request.POST:  # This is a keyword form submission
+            keyword_form = KeyWordForm(request.POST)
+            if keyword_form.is_valid():
+                try:
+                    new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)  # Pass the parent keyword
+                    return redirect(new_keyword.keyword.get_absolute_url())  # Redirect to the new keyword detail view
+                except forms.ValidationError as e:
+                    keyword_error = str(e)
+        elif 'vote_submit' in request.POST:  # This is a vote form submission
+            vote_value = request.POST.get('vote')
+            if vote_value:
+                vote_value = int(vote_value)
+                if vote:
+                    vote.vote = vote_value
+                    vote.save()
+                else:
+                    vote = Vote.objects.create(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user, vote=vote_value)
+                keyword_obj.calculate_status()  # Recalculate the status after the vote
 
     else:
         keyword_form = KeyWordForm()
+
+    votes = keyword_obj.get_votes()
+    total_votes = votes.count()
+    total_approve_votes = votes.filter(vote=VoteType.APPROVE.value).count()
+    total_reject_votes = votes.filter(vote=VoteType.REJECT.value).count()
 
     context = {
         'keyword': keyword_obj,
         'keyword_form': keyword_form,
         'keyword_error': keyword_error,
+        'vote': vote,
+        'participation_percentage': keyword_obj.participation_percentage,
+        'approval_percentage': keyword_obj.approval_percentage,
+        'votable_content_type': votable_content_type.id,  # Here's where we add the content type to the context
+        'votable_object_id': keyword_obj.id,  # ... and the object id.
+        'total_votes': total_votes,
+        'total_approve_votes': total_approve_votes,
+        'total_reject_votes': total_reject_votes,
     }
 
     return render(request, 'app01/keyword_detail.html', context)
@@ -190,39 +262,6 @@ def propose_question(request, parent_question_id=None):
     else:
         form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
     return render(request, 'app01/propose_question.html', {'form': form})
-
-
-@login_required
-def submit_vote(request):
-    if request.method == 'POST':
-        form = ProposalVoteForm(request.POST, user=request.user)
-        if form.is_valid():
-            question = form.cleaned_data['question_id']
-            vote = form.cleaned_data['vote']
-            # Convert vote from string to int if needed
-            if vote == '1':
-                vote = VoteType.APPROVE.value
-            elif vote == '-1':
-                vote = VoteType.REJECT.value
-            elif vote == '':
-                vote = VoteType.NO_VOTE.value
-            else:
-                return JsonResponse({'error': 'Invalid vote value'}, status=400)
-
-            # Create or update vote
-            ProposalVote.objects.submit_vote(user=request.user, question=question, vote=vote)
-
-            # Retrieve vote data
-            vote_data = ProposalVoteData.objects.get(question=question)
-            return JsonResponse({
-                'total_votes': vote_data.total_votes,
-                'total_approve_votes': vote_data.total_approve_votes,
-                'total_reject_votes': vote_data.total_reject_votes,
-                'approval_percentage': vote_data.approval_percentage,
-                'participation_percentage': vote_data.participation_percentage,
-            })
-        else:
-            return JsonResponse({'error': 'Form is not valid'}, status=400)
 
 
 
