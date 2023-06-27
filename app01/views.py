@@ -10,7 +10,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm, VoteForm
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse, HttpResponse, Http404, HttpResponseNotAllowed
 from django.views.generic import ListView
 from django.contrib.auth.models import User, ContentType
 from django.shortcuts import get_object_or_404
@@ -32,6 +32,7 @@ def submit_vote(request):
             user = request.user
             votable_content_type = form.cleaned_data['votable_content_type']
             votable_object_id = form.cleaned_data['votable_object_id']
+            vote_value = form.cleaned_data['vote']
 
             # Try to get an existing vote from this user for this object
             try:
@@ -39,32 +40,34 @@ def submit_vote(request):
             except Vote.DoesNotExist:
                 vote = None
 
-            if vote:
-                # If an existing vote is found, update it
-                vote.vote = form.cleaned_data['vote']
-                vote.save()
+            if vote_value == VoteType.NO_VOTE.value:
+                # If the user selected "No Vote", delete the vote if it exists
+                if vote:
+                    vote.delete()
             else:
-                # If no existing vote is found, create a new one
-                form.save()
+                # If the user selected approve or reject, update the existing vote or create a new one
+                if vote:
+                    vote.vote = vote_value
+                    vote.save()
+                else:
+                    form.save()
 
             votable_object = votable_content_type.get_object_for_this_type(id=votable_object_id)
-            votable_object.calculate_status()
             new_status = votable_object.calculate_status()
 
             data = {
-                'total_votes': votable_object.get_votes().count(),
-                'total_approve_votes': votable_object.get_votes().filter(vote=VoteType.APPROVE.value).count(),
-                'total_reject_votes': votable_object.get_votes().filter(vote=VoteType.REJECT.value).count(),
-                'participation_percentage': float(votable_object.participation_percentage),
-                'approval_percentage': float(votable_object.approval_percentage),
-                'status': new_status
+                'total_votes': votable_object.get_votes().exclude(vote=VoteType.NO_VOTE.value).count(),
+                'status': new_status,
+                'approval_percentage': votable_object.approval_percentage,
+                'rejection_percentage': 100 - votable_object.approval_percentage,
+                'participation_percentage': votable_object.participation_percentage,
+                'total_approve_votes': votable_object.total_approve_votes,  # added
+                'total_reject_votes': votable_object.total_reject_votes,  # added
             }
 
             return JsonResponse(data)
-        else:
-            print(form.errors)
-            return JsonResponse({'error': 'Form is not valid'}, status=400)
 
+        return HttpResponseNotAllowed(['POST'])
 
 def keyword_detail(request, keyword):
     # Fetch the keyword from the database

@@ -10,12 +10,10 @@
             {% csrf_token %}
             <input type="hidden" name="votable_content_type" value="{{ votable_content_type }}">
             <input type="hidden" name="votable_object_id" value="{{ votable_object_id }}">
-            <select id="vote" name="vote">
-                <option value="">Vote</option>
-                <option value="1">Approve</option>
-                <option value="-1">Reject</option>
-                <option value="0">No Vote</option>
-            </select>
+            <input type="hidden" id="vote" name="vote">  <!-- Add this line back -->
+            <button type="button" class="vote-btn" id="approve" value="1">Approve</button>  <!-- Change the ids -->
+            <button type="button" class="vote-btn" id="reject" value="-1">Reject</button>
+            <button type="button" class="vote-btn" id="no_vote" value="0">No Vote</button>
         </form>
     </div>
 
@@ -62,7 +60,7 @@
         </div>
     {% endif %}
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
-   <script>
+    <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
                 element.addEventListener('click', (event) => {
@@ -79,28 +77,45 @@
                 });
             });
 
-                $('#vote').on('change', function(){
-                $.ajax({
-                    url : "{% url 'app01:submit_vote' %}",
-                    type : "POST",
-                    data : $('.vote-form').serialize(),
+            document.querySelectorAll('.vote-btn').forEach((element) => {
+                element.addEventListener('click', (event) => {
+                    event.preventDefault();
 
-                    success : function(json) {
-                        // update the keyword stats and status on successful vote
-                        $('#total_votes').text(json.total_votes);
-                        $('#total_approve_votes').text(json.total_approve_votes);
-                        $('#total_reject_votes').text(json.total_reject_votes);
-                        $('#participation_percentage').text(json.participation_percentage);
-                        $('#approval_percentage').text(json.approval_percentage);
-                        $('#status').text(json.status);  // Add this line to update the status
-                    },
-
-                    error : function(xhr,errmsg,err) {
-                        console.log(xhr.status + ": " + xhr.responseText);
+                    let voteValue;
+                    if (event.target.id === 'approve') {
+                        voteValue = 1;
+                    } else if (event.target.id === 'reject') {
+                        voteValue = -1;
+                    } else {
+                        voteValue = 0;
                     }
+
+                    // Set the vote value to the hidden field
+                    let voteInput = document.getElementById('vote');
+                    voteInput.value = voteValue;
+
+                    $.ajax({
+                        url : "{% url 'app01:submit_vote' %}",
+                        type : "POST",
+                        data : $('.vote-form').serialize(),
+
+                        success : function(json) {
+                            // update the keyword stats and status on successful vote
+                            $('#total_votes').text(json.total_votes);
+                            $('#total_approve_votes').text(json.total_approve_votes);  // updated
+                            $('#total_reject_votes').text(json.total_reject_votes);  // updated
+                            $('#participation_percentage').text(json.participation_percentage);
+                            $('#approval_percentage').text(json.approval_percentage);
+                            $('#status').text(json.status);
+                        },
+
+
+                        error : function(xhr,errmsg,err) {
+                            console.log(xhr.status + ": " + xhr.responseText);
+                        }
+                    });
                 });
             });
         });
     </script>
-
 {% endblock %}

@@ -36,10 +36,10 @@ class VoteType(Enum):
 
 
 class Status(Enum):
-    PROPOSED = 'Proposed'
-    APPROVED = 'Approved'
-    REJECTED = 'Rejected'
-    ALTERNATIVE = 'Alternative'
+    PROPOSED = 'proposed'
+    APPROVED = 'approved'
+    REJECTED = 'rejected'
+    ALTERNATIVE = 'alternative'
 
 
 class AnswerType(Enum):
@@ -57,8 +57,8 @@ class Votable(models.Model):
         default=Status.PROPOSED.value
     )
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
-    participation_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    approval_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    participation_percentage = models.DecimalField(max_digits=3, decimal_places=0, default=0)
+    approval_percentage = models.DecimalField(max_digits=3, decimal_places=0, default=0)
     total_votes = models.PositiveIntegerField(default=0)
     total_approve_votes = models.PositiveIntegerField(default=0)
     total_reject_votes = models.PositiveIntegerField(default=0)
@@ -68,16 +68,20 @@ class Votable(models.Model):
 
     def calculate_status(self):
         content_type = ContentType.objects.get_for_model(self.__class__)
+
+        total_votes = Vote.objects.filter(
+            votable_content_type=content_type,
+            votable_object_id=self.id
+        ).exclude(vote=VoteType.NO_VOTE.value).count()
+
         vote_data = Vote.objects.filter(
             votable_content_type=content_type,
             votable_object_id=self.id
         ).exclude(vote=VoteType.NO_VOTE.value).aggregate(
-            total_votes=Count('id'),
             total_approve_votes=Count('id', filter=models.Q(vote=VoteType.APPROVE.value)),
             total_reject_votes=Count('id', filter=models.Q(vote=VoteType.REJECT.value)),
         )
 
-        total_votes = vote_data['total_votes']
         total_approve_votes = vote_data['total_approve_votes']
         total_reject_votes = vote_data['total_reject_votes']
 

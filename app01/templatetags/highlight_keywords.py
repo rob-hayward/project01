@@ -19,11 +19,11 @@ def highlight_keywords(text):
         if clean_word.isalnum():
             try:
                 keyword = KeyWord.objects.get(word__iexact=clean_word)
-                if keyword.status == 'Approved':
+                if keyword.status == 'approved':
                     words[i] = word.replace(clean_word, f'<a href="{keyword.get_absolute_url()}" class="keyword approved" data-word="{clean_word}">{keyword.word}</a>')
-                elif keyword.status == 'Proposed':
+                elif keyword.status == 'proposed':
                     words[i] = word.replace(clean_word, f'<a href="{keyword.get_absolute_url()}" class="keyword proposed" data-word="{clean_word}">{keyword.word}</a>')
-                elif keyword.status == 'Rejected':
+                elif keyword.status == 'rejected':
                     words[i] = word.replace(clean_word, f'<a href="{keyword.get_absolute_url()}" class="keyword rejected" data-word="{clean_word}">{keyword.word}</a>')
             except KeyWord.DoesNotExist:
                 words[i] = f'<span data-word="{clean_word}">{clean_word}</span>'
