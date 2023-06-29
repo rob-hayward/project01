@@ -5,7 +5,12 @@
 {% block content %}
     <div style="display: flex; align-items: baseline;">
         <h1 style="margin-right: 20px;">{{ keyword.word }}</h1>
-
+        <p>Current keyword status: <span id="status" class="{% if keyword.status == 'Approved' %}approved{% elif keyword.status == 'Proposed' %}proposed{% elif keyword.status == 'Rejected' %}rejected{% elif keyword.status == 'Alternative' %}alternative{% endif %}">{{ keyword.status }}</span></p>
+    </div>
+    <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
+            <span id="user_vote" class="{% if user_vote == 'Approve' %}approve{% elif user_vote == 'Reject' %}reject{% else %}no-vote{% endif %}">{{ user_vote }}</span></p>
+        <p>You can change your vote anytime using the buttons below.</p>
         <form class="vote-form" method="post">
             {% csrf_token %}
             <input type="hidden" name="votable_content_type" value="{{ votable_content_type }}">
@@ -18,9 +23,10 @@
     </div>
 
     <div class="keyword-stats">
+        <h5>Community vote data for keyword {{ keyword.word }}:</h5>
         <table>
             <tr>
-                <th>Status</th>
+<!--                <th>Status</th>-->
                 <th>Total Votes</th>
                 <th>Approve Votes</th>
                 <th>Reject Votes</th>
@@ -28,7 +34,7 @@
                 <th>% Approval</th>
             </tr>
             <tr>
-                <td id="status">{{ keyword.status }}</td>
+<!--                <td id="status">{{ keyword.status }}</td>-->
                 <td id="total_votes">{{ keyword.total_votes }}</td>
                 <td id="total_approve_votes">{{ keyword.total_approve_votes }}</td>
                 <td id="total_reject_votes">{{ keyword.total_reject_votes }}</td>
@@ -37,16 +43,16 @@
             </tr>
         </table>
     </div>
-
-    <p>
-        {{ keyword.word }} definition:
-        {% if keyword.definition %}
-            {{ keyword.definition.definition|highlight_keywords }}
-        {% else %}
-            "No definition available"
-        {% endif %}
-    </p>
-
+    <div>
+        <h2>{{ keyword.word }} definition:</h2>
+        <p>
+            {% if keyword.definition %}
+                {{ keyword.definition.definition|highlight_keywords }}
+            {% else %}
+                "No definition available"
+            {% endif %}
+        </p>
+    </div>
     <h6>Suggest a new keyword:</h6>
     <form method="post">
         {% csrf_token %}
@@ -107,7 +113,31 @@
                             $('#participation_percentage').text(json.participation_percentage);
                             $('#approval_percentage').text(json.approval_percentage);
                             $('#status').text(json.status);
+                            $('#user_vote').text(json.user_vote);
+
+                            // Update the status class
+                            $('#status').removeClass('approved proposed rejected alternative');
+                            if (json.status === 'Approved') {
+                                $('#status').addClass('approved');
+                            } else if (json.status === 'Proposed') {
+                                $('#status').addClass('proposed');
+                            } else if (json.status === 'Rejected') {
+                                $('#status').addClass('rejected');
+                            } else if (json.status === 'Alternative') {
+                                $('#status').addClass('alternative');
+                            }
+
+                            // Update the user_vote class
+                            $('#user_vote').removeClass('approve reject no-vote');
+                            if (json.user_vote == 'Approve') {
+                                $('#user_vote').addClass('approve');
+                            } else if (json.user_vote == 'Reject') {
+                                $('#user_vote').addClass('reject');
+                            } else {
+                                $('#user_vote').addClass('no-vote');
+                            }
                         },
+
 
 
                         error : function(xhr,errmsg,err) {

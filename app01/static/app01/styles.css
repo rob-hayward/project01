@@ -1,3 +1,11 @@
+:root {
+  --proposed: #0079FF;
+  --rejected: #FF0060;
+  --approved: #00DFA2;
+  --alternative: #F6FA70;
+  --no-vote: #454545; /* or any other color for no-vote */
+}
+
 .navbar {
     background-color: white !important;
 }
@@ -107,52 +115,112 @@ tr:hover {
   cursor: pointer;
 }
 
-.keyword.approved {
-  color: green !important;
-}
-
-.keyword.proposed {
-  color: blue !important;
-}
-
-.keyword.rejected {
-  color: red !important;
-}
-
 #keywordTree {
   overflow: auto;
 }
 
 .vote-btn {
-  background-color: #4CAF50; /* Green */
-  border: none;
-  color: white;
-  padding: 15px 32px;
-  text-align: center;
-  text-decoration: none;
   display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  transition-duration: 0.4s;
+  font-size: 1rem; /* Change as needed */
+  text-align: center;
+  color: #ffffff; /* Set the text color to white */
+  font-weight: bold;
+  width: 5rem; /* Fixed width */
+  height: 5rem; /* Fixed height */
+  line-height: 5rem; /* Vertically align the text */
+  padding: 0;
+  margin: 0.5rem;
+  border-radius: 50%; /* Make the button circular */
+  border: none;
   cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden; /* To ensure longer text doesn't overflow */
+  outline-color: #ffffff;
 }
 
+.vote-btn:focus {
+  /* Add a white box shadow on focus */
+  box-shadow: 0 0 10px #ffffff;
+}
+
+div {
+    margin-bottom: 2rem;
+}
+
+
 #approve {
-  background-color: green;
-  border-color: darkgreen;
+  background-color: var(--approved);
+}
+
+#approve:hover {
+  background-color: var(--approved);
 }
 
 #reject {
-  background-color: red;
-  border-color: darkred;
+  background-color: var(--rejected);
+}
+
+#reject:hover {
+  background-color: var(--rejected);
 }
 
 #no_vote {
-  background-color: white;
-  color: black;
-  border-color: #4CAF50;
+  background-color: var(--no-vote);
 }
 
-.vote-btn:hover {
-  opacity: 0.7;
+#no_vote:hover {
+  background-color: var(--no-vote);
+}
+
+
+span#status {
+  font-weight: bold;
+}
+
+span#status.proposed {
+  color: var(--proposed);
+}
+
+span#status.approved {
+  color: var(--approved);
+}
+
+span#status.rejected {
+  color: var(--rejected);
+}
+
+span#status.alternative {
+  color: var(--alternative);
+}
+
+span#user_vote {
+  font-weight: bold;
+}
+
+span#user_vote.approve {
+  color: var(--approved);
+}
+
+span#user_vote.reject {
+  color: var(--rejected);
+}
+
+span#user_vote.no-vote {
+  color: var(--no-vote);
+}
+
+.keyword {
+  color: var(--proposed);
+}
+
+.keyword.rejected {
+  color: var(--rejected);
+}
+
+.keyword.alternative {
+  color: var(--alternative);
+}
+
+.keyword.approved {
+  color: var(--approved);
 }

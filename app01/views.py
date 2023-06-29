@@ -54,10 +54,12 @@ def submit_vote(request):
 
             votable_object = votable_content_type.get_object_for_this_type(id=votable_object_id)
             new_status = votable_object.calculate_status()
+            user_vote = votable_object.get_user_vote(request.user)
 
             data = {
                 'total_votes': votable_object.get_votes().exclude(vote=VoteType.NO_VOTE.value).count(),
                 'status': new_status,
+                'user_vote': user_vote,
                 'approval_percentage': votable_object.approval_percentage,
                 'rejection_percentage': 100 - votable_object.approval_percentage,
                 'participation_percentage': votable_object.participation_percentage,
@@ -69,6 +71,8 @@ def submit_vote(request):
 
         return HttpResponseNotAllowed(['POST'])
 
+
+@login_required
 def keyword_detail(request, keyword):
     # Fetch the keyword from the database
     keyword_obj = get_object_or_404(KeyWord, word=keyword)
@@ -78,10 +82,6 @@ def keyword_detail(request, keyword):
 
     # Fetch the content type for the keyword model
     votable_content_type = ContentType.objects.get_for_model(keyword_obj)
-
-    # Try to fetch the user's vote for the keyword
-    if request.user.is_authenticated:
-        vote = Vote.objects.filter(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user).first()
 
     if request.method == 'POST':
         if 'keyword_submit' in request.POST:  # This is a keyword form submission
@@ -110,12 +110,13 @@ def keyword_detail(request, keyword):
     total_votes = votes.count()
     total_approve_votes = votes.filter(vote=VoteType.APPROVE.value).count()
     total_reject_votes = votes.filter(vote=VoteType.REJECT.value).count()
+    user_vote = keyword_obj.get_user_vote(request.user)
 
     context = {
         'keyword': keyword_obj,
         'keyword_form': keyword_form,
         'keyword_error': keyword_error,
-        'vote': vote,
+        'user_vote': user_vote,
         'participation_percentage': keyword_obj.participation_percentage,
         'approval_percentage': keyword_obj.approval_percentage,
         'votable_content_type': votable_content_type.id,  # Here's where we add the content type to the context

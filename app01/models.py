@@ -36,10 +36,10 @@ class VoteType(Enum):
 
 
 class Status(Enum):
-    PROPOSED = 'proposed'
-    APPROVED = 'approved'
-    REJECTED = 'rejected'
-    ALTERNATIVE = 'alternative'
+    PROPOSED = 'Proposed'
+    APPROVED = 'Approved'
+    REJECTED = 'Rejected'
+    ALTERNATIVE = 'Alternative'
 
 
 class AnswerType(Enum):
@@ -108,6 +108,20 @@ class Votable(models.Model):
     def get_votes(self):
         content_type = ContentType.objects.get_for_model(self)
         return Vote.objects.filter(votable_content_type=content_type, votable_object_id=self.id)
+
+    def get_user_vote(self, user):
+        content_type = ContentType.objects.get_for_model(self)
+        try:
+            vote = Vote.objects.get(votable_content_type=content_type, votable_object_id=self.id, user=user)
+            if vote.vote == 1:
+                user_vote = 'Approve'
+            elif vote.vote == -1:
+                user_vote = 'Reject'
+            else:
+                user_vote = 'No Vote'
+            return user_vote
+        except Vote.DoesNotExist:
+            return 'No Vote'
 
     def get_alternatives(self):
         return self.children.filter(status=Status.ALTERNATIVE.value)
