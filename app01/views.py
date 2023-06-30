@@ -28,24 +28,20 @@ def submit_vote(request):
     if request.method == 'POST':
         form = VoteForm(request.POST, user=request.user)
         if form.is_valid():
-            # Extract the user, votable_content_type, and votable_object_id from the form
             user = request.user
             votable_content_type = form.cleaned_data['votable_content_type']
             votable_object_id = form.cleaned_data['votable_object_id']
             vote_value = form.cleaned_data['vote']
 
-            # Try to get an existing vote from this user for this object
             try:
                 vote = Vote.objects.get(user=user, votable_content_type=votable_content_type, votable_object_id=votable_object_id)
             except Vote.DoesNotExist:
                 vote = None
 
             if vote_value == VoteType.NO_VOTE.value:
-                # If the user selected "No Vote", delete the vote if it exists
                 if vote:
                     vote.delete()
             else:
-                # If the user selected approve or reject, update the existing vote or create a new one
                 if vote:
                     vote.vote = vote_value
                     vote.save()
@@ -53,19 +49,8 @@ def submit_vote(request):
                     form.save()
 
             votable_object = votable_content_type.get_object_for_this_type(id=votable_object_id)
-            new_status = votable_object.calculate_status()
-            user_vote = votable_object.get_user_vote(request.user)
-
-            data = {
-                'total_votes': votable_object.get_votes().exclude(vote=VoteType.NO_VOTE.value).count(),
-                'status': new_status,
-                'user_vote': user_vote,
-                'approval_percentage': votable_object.approval_percentage,
-                'rejection_percentage': 100 - votable_object.approval_percentage,
-                'participation_percentage': votable_object.participation_percentage,
-                'total_approve_votes': votable_object.total_approve_votes,  # added
-                'total_reject_votes': votable_object.total_reject_votes,  # added
-            }
+            data = votable_object.get_vote_data()
+            data['user_vote'] = votable_object.get_user_vote(request.user)
 
             return JsonResponse(data)
 
@@ -74,57 +59,46 @@ def submit_vote(request):
 
 @login_required
 def keyword_detail(request, keyword):
-    # Fetch the keyword from the database
     keyword_obj = get_object_or_404(KeyWord, word=keyword)
     keyword_form = None
     keyword_error = None
-    vote = None
 
-    # Fetch the content type for the keyword model
     votable_content_type = ContentType.objects.get_for_model(keyword_obj)
 
     if request.method == 'POST':
-        if 'keyword_submit' in request.POST:  # This is a keyword form submission
+        if 'keyword_submit' in request.POST:
             keyword_form = KeyWordForm(request.POST)
             if keyword_form.is_valid():
                 try:
-                    new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)  # Pass the parent keyword
-                    return redirect(new_keyword.keyword.get_absolute_url())  # Redirect to the new keyword detail view
+                    new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)
+                    return redirect(new_keyword.keyword.get_absolute_url())
                 except forms.ValidationError as e:
                     keyword_error = str(e)
-        elif 'vote_submit' in request.POST:  # This is a vote form submission
+        elif 'vote_submit' in request.POST:
             vote_value = request.POST.get('vote')
             if vote_value:
                 vote_value = int(vote_value)
-                if vote:
+                try:
+                    vote = Vote.objects.get(votable_content_type=votable_content_type, votable_object_id=keyword_obj.id, user=request.user)
                     vote.vote = vote_value
                     vote.save()
-                else:
-                    vote = Vote.objects.create(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user, vote=vote_value)
-                keyword_obj.calculate_status()  # Recalculate the status after the vote
+                except Vote.DoesNotExist:
+                    Vote.objects.create(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user, vote=vote_value)
 
     else:
         keyword_form = KeyWordForm()
 
-    votes = keyword_obj.get_votes()
-    total_votes = votes.count()
-    total_approve_votes = votes.filter(vote=VoteType.APPROVE.value).count()
-    total_reject_votes = votes.filter(vote=VoteType.REJECT.value).count()
-    user_vote = keyword_obj.get_user_vote(request.user)
+    vote_data = keyword_obj.get_vote_data()
+    vote_data['user_vote'] = keyword_obj.get_user_vote(request.user)
 
     context = {
         'keyword': keyword_obj,
         'keyword_form': keyword_form,
         'keyword_error': keyword_error,
-        'user_vote': user_vote,
-        'participation_percentage': keyword_obj.participation_percentage,
-        'approval_percentage': keyword_obj.approval_percentage,
-        'votable_content_type': votable_content_type.id,  # Here's where we add the content type to the context
-        'votable_object_id': keyword_obj.id,  # ... and the object id.
-        'total_votes': total_votes,
-        'total_approve_votes': total_approve_votes,
-        'total_reject_votes': total_reject_votes,
+        'votable_content_type': votable_content_type.id,
+        'votable_object_id': keyword_obj.id,
     }
+    context.update(vote_data)
 
     return render(request, 'app01/keyword_detail.html', context)
 

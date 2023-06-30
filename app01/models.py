@@ -66,7 +66,7 @@ class Votable(models.Model):
     class Meta:
         abstract = True  # This makes Votable an abstract base class
 
-    def calculate_status(self):
+    def get_vote_data(self):
         content_type = ContentType.objects.get_for_model(self.__class__)
 
         total_votes = Vote.objects.filter(
@@ -103,7 +103,17 @@ class Votable(models.Model):
 
         self.save()
 
-        return self.status
+        vote_data = {
+            'status': self.status,
+            'total_votes': total_votes,
+            'approval_percentage': self.approval_percentage,
+            'rejection_percentage': 100 - self.approval_percentage,
+            'participation_percentage': self.participation_percentage,
+            'total_approve_votes': total_approve_votes,
+            'total_reject_votes': total_reject_votes,
+        }
+
+        return vote_data
 
     def get_votes(self):
         content_type = ContentType.objects.get_for_model(self)
