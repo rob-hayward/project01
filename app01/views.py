@@ -4,7 +4,6 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from . import models
 from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question, Vote
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
@@ -18,8 +17,6 @@ from django.views.generic import DetailView
 from django.http import HttpResponseForbidden
 from .forms import KeyWordForm, QuestionForm
 from django import forms
-from django.shortcuts import render
-from django.shortcuts import redirect
 from django.contrib.contenttypes.models import ContentType
 
 

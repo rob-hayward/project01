@@ -258,6 +258,14 @@ class AnswerDecimal(models.Model):
         )
 
 
+class DesignBrief:
+    pass
+
+
+class Design:
+    pass
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
     preferred_name = models.CharField(max_length=255, blank=True)  # New field

@@ -9,14 +9,14 @@
     </div>
     <div>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
-            <span id="user_vote" class="{% if user_vote == 'Approve' %}approve{% elif user_vote == 'Reject' %}reject{% else %}no-vote{% endif %}">{{ user_vote }}</span></p>
+            <span id="user_vote" class="{{ user_vote|lower }}">{{ user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="vote-form" method="post">
             {% csrf_token %}
             <input type="hidden" name="votable_content_type" value="{{ votable_content_type }}">
             <input type="hidden" name="votable_object_id" value="{{ votable_object_id }}">
-            <input type="hidden" id="vote" name="vote">  <!-- Add this line back -->
-            <button type="button" class="vote-btn" id="approve" value="1">Approve</button>  <!-- Change the ids -->
+            <input type="hidden" id="vote" name="vote">
+            <button type="button" class="vote-btn" id="approve" value="1">Approve</button>
             <button type="button" class="vote-btn" id="reject" value="-1">Reject</button>
             <button type="button" class="vote-btn" id="no_vote" value="0">No Vote</button>
         </form>
