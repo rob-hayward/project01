@@ -5,20 +5,20 @@
 {% block content %}
     <div style="display: flex; align-items: baseline;">
         <h1 style="margin-right: 20px;">{{ keyword.word }}</h1>
-        <p>Current keyword status: <span id="status" class="{% if keyword.status == 'Approved' %}approved{% elif keyword.status == 'Proposed' %}proposed{% elif keyword.status == 'Rejected' %}rejected{% elif keyword.status == 'Alternative' %}alternative{% endif %}">{{ keyword.status }}</span></p>
+        <p>Current keyword status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
     </div>
     <div>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
-            <span id="user_vote" class="{{ user_vote|lower }}">{{ user_vote }}</span></p>
+            <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="vote-form" method="post">
             {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ votable_content_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ votable_object_id }}">
-            <input type="hidden" id="vote" name="vote">
-            <button type="button" class="vote-btn" id="approve" value="1">Approve</button>
-            <button type="button" class="vote-btn" id="reject" value="-1">Reject</button>
-            <button type="button" class="vote-btn" id="no_vote" value="0">No Vote</button>
+            <input type="hidden" name="votable_content_type" value="{{ keyword_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ keyword_obj }}">
+            <input type="hidden" id="keyword_vote" name="vote">
+            <button type="button" class="vote-btn" id="keyword_approve" value="1">Approve</button>
+            <button type="button" class="vote-btn" id="keyword_reject" value="-1">Reject</button>
+            <button type="button" class="vote-btn" id="keyword_no_vote" value="0">No Vote</button>
         </form>
     </div>
 
@@ -26,7 +26,6 @@
         <h5>Community vote data for keyword {{ keyword.word }}:</h5>
         <table>
             <tr>
-<!--                <th>Status</th>-->
                 <th>Total Votes</th>
                 <th>Approve Votes</th>
                 <th>Reject Votes</th>
@@ -34,12 +33,11 @@
                 <th>% Approval</th>
             </tr>
             <tr>
-<!--                <td id="status">{{ keyword.status }}</td>-->
-                <td id="total_votes">{{ keyword.total_votes }}</td>
-                <td id="total_approve_votes">{{ keyword.total_approve_votes }}</td>
-                <td id="total_reject_votes">{{ keyword.total_reject_votes }}</td>
-                <td id="participation_percentage">{{ keyword.participation_percentage }}%</td>
-                <td id="approval_percentage">{{ keyword.approval_percentage }}%</td>
+                <td id="keyword_total_votes">{{ keyword.total_votes }}</td>
+                <td id="keyword_total_approve_votes">{{ keyword.total_approve_votes }}</td>
+                <td id="keyword_total_reject_votes">{{ keyword.total_reject_votes }}</td>
+                <td id="keyword_participation_percentage">{{ keyword.participation_percentage }}%</td>
+                <td id="keyword_approval_percentage">{{ keyword.approval_percentage }}%</td>
             </tr>
         </table>
     </div>
@@ -87,18 +85,18 @@
                 element.addEventListener('click', (event) => {
                     event.preventDefault();
 
-                    let voteValue;
-                    if (event.target.id === 'approve') {
-                        voteValue = 1;
-                    } else if (event.target.id === 'reject') {
-                        voteValue = -1;
+                    let keywordVoteValue;
+                    if (event.target.id === 'keyword_approve') {
+                        keywordVoteValue = 1;
+                    } else if (event.target.id === 'keyword_reject') {
+                        keywordVoteValue = -1;
                     } else {
-                        voteValue = 0;
+                        keywordVoteValue = 0;
                     }
 
                     // Set the vote value to the hidden field
-                    let voteInput = document.getElementById('vote');
-                    voteInput.value = voteValue;
+                    let keywordVoteInput = document.getElementById('keyword_vote');
+                    keywordVoteInput.value = keywordVoteValue;
 
                     $.ajax({
                         url : "{% url 'app01:submit_vote' %}",
@@ -107,38 +105,36 @@
 
                         success : function(json) {
                             // update the keyword stats and status on successful vote
-                            $('#total_votes').text(json.total_votes);
-                            $('#total_approve_votes').text(json.total_approve_votes);  // updated
-                            $('#total_reject_votes').text(json.total_reject_votes);  // updated
-                            $('#participation_percentage').text(json.participation_percentage);
-                            $('#approval_percentage').text(json.approval_percentage);
-                            $('#status').text(json.status);
-                            $('#user_vote').text(json.user_vote);
+                            $('#keyword_total_votes').text(json.total_votes);
+                            $('#keyword_total_approve_votes').text(json.total_approve_votes);  // updated
+                            $('#keyword_total_reject_votes').text(json.total_reject_votes);  // updated
+                            $('#keyword_participation_percentage').text(json.participation_percentage);
+                            $('#keyword_approval_percentage').text(json.approval_percentage);
+                            $('#keyword_status').text(json.status);
+                            $('#keyword_user_vote').text(json.user_vote);
 
                             // Update the status class
-                            $('#status').removeClass('approved proposed rejected alternative');
+                            $('#keyword_status').removeClass('approved proposed rejected alternative');
                             if (json.status === 'Approved') {
-                                $('#status').addClass('approved');
+                                $('#keyword_status').addClass('approved');
                             } else if (json.status === 'Proposed') {
-                                $('#status').addClass('proposed');
+                                $('#keyword_status').addClass('proposed');
                             } else if (json.status === 'Rejected') {
-                                $('#status').addClass('rejected');
+                                $('#keyword_status').addClass('rejected');
                             } else if (json.status === 'Alternative') {
-                                $('#status').addClass('alternative');
+                                $('#keyword_status').addClass('alternative');
                             }
 
                             // Update the user_vote class
-                            $('#user_vote').removeClass('approve reject no-vote');
+                            $('#keyword_user_vote').removeClass('approve reject no-vote');
                             if (json.user_vote == 'Approve') {
-                                $('#user_vote').addClass('approve');
+                                $('#keyword_user_vote').addClass('approve');
                             } else if (json.user_vote == 'Reject') {
-                                $('#user_vote').addClass('reject');
+                                $('#keyword_user_vote').addClass('reject');
                             } else {
-                                $('#user_vote').addClass('no-vote');
+                                $('#keyword_user_vote').addClass('no-vote');
                             }
                         },
-
-
 
                         error : function(xhr,errmsg,err) {
                             console.log(xhr.status + ": " + xhr.responseText);

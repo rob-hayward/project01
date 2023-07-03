@@ -148,68 +148,68 @@ div {
 }
 
 
-#approve {
+#keyword_approve {
   background-color: var(--approved);
 }
 
-#approve:hover {
+#keyword_approve:hover {
   background-color: var(--approved);
 }
 
-#reject {
+#keyword_reject {
   background-color: var(--rejected);
 }
 
-#reject:hover {
+#keyword_reject:hover {
   background-color: var(--rejected);
 }
 
-#no_vote {
+#keyword_no_vote {
   background-color: var(--no-vote);
 }
 
-#no_vote:hover {
+#keyword_no_vote:hover {
   background-color: var(--no-vote);
 }
 
 
-span#status {
+span#keyword_status {
   font-weight: bold;
 }
 
-span#status.proposed {
+span#keyword_status.proposed {
   color: var(--proposed);
 }
 
-span#status.approved {
+span#keyword_status.approved {
   color: var(--approved);
 }
 
-span#status.rejected {
+span#keyword_status.rejected {
   color: var(--rejected);
 }
 
-span#status.alternative {
+span#keyword_status.alternative {
   color: var(--alternative);
 }
 
-span#user_vote {
+span#keyword_user_vote {
   font-weight: bold;
 }
 
-span#user_vote.approve {
+span#keyword_user_vote.approve {
   color: var(--approved);
 }
 
-span#user_vote.reject {
+span#keyword_user_vote.reject {
   color: var(--rejected);
 }
 
-span#user_vote.no-vote {
+span#keyword_user_vote.no-vote {
   color: var(--no-vote);
 }
 
-.keyword {
+.keyword.proposed {
   color: var(--proposed);
 }
 

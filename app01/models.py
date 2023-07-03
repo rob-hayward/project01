@@ -123,12 +123,14 @@ class Votable(models.Model):
         content_type = ContentType.objects.get_for_model(self)
         try:
             vote = Vote.objects.get(votable_content_type=content_type, votable_object_id=self.id, user=user)
+            print(f"Vote object: {vote}")
             if vote.vote == 1:
                 user_vote = 'Approve'
             elif vote.vote == -1:
                 user_vote = 'Reject'
             else:
                 user_vote = 'No Vote'
+                print(f"User vote: {user_vote}")
             return user_vote
         except Vote.DoesNotExist:
             return 'No Vote'

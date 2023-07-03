@@ -20,7 +20,6 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 
 
-@login_required
 def submit_vote(request):
     if request.method == 'POST':
         form = VoteForm(request.POST, user=request.user)
@@ -51,51 +50,49 @@ def submit_vote(request):
 
             return JsonResponse(data)
 
-        return HttpResponseNotAllowed(['POST'])
+    # This is the response for non-POST requests. It should be outside the 'if' condition.
+    return HttpResponseNotAllowed(['POST'])
 
 
 @login_required
 def keyword_detail(request, keyword):
     keyword_obj = get_object_or_404(KeyWord, word=keyword)
-    keyword_form = None
+    keyword_definition_obj = keyword_obj.definition
     keyword_error = None
 
-    votable_content_type = ContentType.objects.get_for_model(keyword_obj)
+    keyword_votable_type = ContentType.objects.get_for_model(keyword_obj)
+    keyword_definition_votable_type = ContentType.objects.get_for_model(keyword_definition_obj)
 
-    if request.method == 'POST':
-        if 'keyword_submit' in request.POST:
-            keyword_form = KeyWordForm(request.POST)
-            if keyword_form.is_valid():
-                try:
-                    new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)
-                    return redirect(new_keyword.keyword.get_absolute_url())
-                except forms.ValidationError as e:
-                    keyword_error = str(e)
-        elif 'vote_submit' in request.POST:
-            vote_value = request.POST.get('vote')
-            if vote_value:
-                vote_value = int(vote_value)
-                try:
-                    vote = Vote.objects.get(votable_content_type=votable_content_type, votable_object_id=keyword_obj.id, user=request.user)
-                    vote.vote = vote_value
-                    vote.save()
-                except Vote.DoesNotExist:
-                    Vote.objects.create(votable_object_id=keyword_obj.id, votable_content_type=votable_content_type, user=request.user, vote=vote_value)
-
+    if request.method == 'POST' and 'keyword_submit' in request.POST:
+        keyword_form = KeyWordForm(request.POST)
+        if keyword_form.is_valid():
+            try:
+                new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)
+                return redirect(new_keyword.keyword.get_absolute_url())
+            except forms.ValidationError as e:
+                keyword_error = str(e)
     else:
         keyword_form = KeyWordForm()
 
-    vote_data = keyword_obj.get_vote_data()
-    vote_data['user_vote'] = keyword_obj.get_user_vote(request.user)
+    keyword_vote_data = keyword_obj.get_vote_data()
+    keyword_user_vote = keyword_obj.get_user_vote(request.user)
+    keyword_definition_vote_data = keyword_definition_obj.get_vote_data()
+    keyword_definition_user_vote = keyword_definition_obj.get_user_vote(request.user)
 
     context = {
         'keyword': keyword_obj,
+        'keyword_definition': keyword_definition_obj,
         'keyword_form': keyword_form,
         'keyword_error': keyword_error,
-        'votable_content_type': votable_content_type.id,
-        'votable_object_id': keyword_obj.id,
+        'keyword_votable_type': keyword_votable_type.id,
+        'keyword_obj': keyword_obj.id,
+        'keyword_user_vote': keyword_user_vote,
+        'keyword_definition_votable_type': keyword_definition_votable_type.id,
+        'keyword_definition_obj': keyword_definition_obj.id,
+        'keyword_definition_user_vote': keyword_definition_user_vote,
     }
-    context.update(vote_data)
+    context.update(keyword_vote_data)
+    context.update(keyword_definition_vote_data)
 
     return render(request, 'app01/keyword_detail.html', context)
 
