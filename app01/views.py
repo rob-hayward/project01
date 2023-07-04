@@ -28,7 +28,6 @@ def submit_vote(request):
             votable_content_type = form.cleaned_data['votable_content_type']
             votable_object_id = form.cleaned_data['votable_object_id']
             vote_value = form.cleaned_data['vote']
-
             try:
                 vote = Vote.objects.get(user=user, votable_content_type=votable_content_type, votable_object_id=votable_object_id)
             except Vote.DoesNotExist:
@@ -49,9 +48,8 @@ def submit_vote(request):
             data['user_vote'] = votable_object.get_user_vote(request.user)
 
             return JsonResponse(data)
-
-    # This is the response for non-POST requests. It should be outside the 'if' condition.
-    return HttpResponseNotAllowed(['POST'])
+    else:
+        return HttpResponseNotAllowed(['POST'])
 
 
 @login_required

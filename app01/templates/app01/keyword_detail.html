@@ -11,14 +11,14 @@
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
             <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
-        <form class="vote-form" method="post">
+        <form class="keyword-vote-form" method="post">
             {% csrf_token %}
             <input type="hidden" name="votable_content_type" value="{{ keyword_votable_type }}">
             <input type="hidden" name="votable_object_id" value="{{ keyword_obj }}">
             <input type="hidden" id="keyword_vote" name="vote">
-            <button type="button" class="vote-btn" id="keyword_approve" value="1">Approve</button>
-            <button type="button" class="vote-btn" id="keyword_reject" value="-1">Reject</button>
-            <button type="button" class="vote-btn" id="keyword_no_vote" value="0">No Vote</button>
+            <button type="button" class="keyword-vote-btn" id="keyword_approve" value="1">Approve</button>
+            <button type="button" class="keyword-vote-btn" id="keyword_reject" value="-1">Reject</button>
+            <button type="button" class="keyword-vote-btn" id="keyword_no_vote" value="0">No Vote</button>
         </form>
     </div>
 
@@ -41,8 +41,11 @@
             </tr>
         </table>
     </div>
+    <div style="display: flex; align-items: baseline;">
+        <h2 style="margin-right: 20px;">{{ keyword.word }} definition:</h2>
+        <p>Current definition status: <span id="keyword_definition_status" class="{{ keyword_definition.status|lower }}">{{ keyword.definition.status }}</span></p>
+    </div>
     <div>
-        <h2>{{ keyword.word }} definition:</h2>
         <p>
             {% if keyword.definition %}
                 {{ keyword.definition.definition|highlight_keywords }}
@@ -51,88 +54,121 @@
             {% endif %}
         </p>
     </div>
+    <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this definition of the keyword '{{ keyword.word }}'is:
+            <span id="keyword_definition_user_vote" class="{{ keyword_definition_user_vote|lower }}">{{ keyword_definition_user_vote }}</span></p>
+        <p>You can change your vote anytime using the buttons below.</p>
+        <form class="definition-vote-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="votable_content_type" value="{{ keyword_definition_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ keyword_definition_obj }}">
+            <input type="hidden" id="keyword_definition_vote" name="vote">
+            <button type="button" class="definition-vote-btn" id="keyword_definition_approve" value="1">Approve</button>
+            <button type="button" class="definition-vote-btn" id="keyword_definition_reject" value="-1">Reject</button>
+            <button type="button" class="definition-vote-btn" id="keyword_definition_no_vote" value="0">No Vote</button>
+        </form>
+    </div>
+<div class="keyword-definition-stats">
+        <h5>Community vote data for the definition of {{ keyword.word }}:</h5>
+        <table>
+            <tr>
+                <th>Total Votes</th>
+                <th>Approve Votes</th>
+                <th>Reject Votes</th>
+                <th>% Participation</th>
+                <th>% Approval</th>
+            </tr>
+            <tr>
+                <td id="keyword_definition_total_votes">{{ keyword.definition.total_votes }}</td>
+                <td id="keyword_definition_total_approve_votes">{{ keyword.definition.total_approve_votes }}</td>
+                <td id="keyword_definition_total_reject_votes">{{ keyword.definition.total_reject_votes }}</td>
+                <td id="keyword_definition_participation_percentage">{{ keyword.definition.participation_percentage }}%</td>
+                <td id="keyword_definition_approval_percentage">{{ keyword.definition.approval_percentage }}%</td>
+            </tr>
+        </table>
+    </div>
     <h6>Suggest a new keyword:</h6>
     <form method="post">
         {% csrf_token %}
         {{ keyword_form|crispy }}
-        <input type="submit" name="keyword_submit" value="Suggest Keyword">
+        <input type="submit" class="propose-btn" name="keyword_submit" value="Propose">
     </form>
-
     {% if keyword_error %}
         <div class="alert alert-danger" role="alert">
             {{ keyword_error }}
         </div>
     {% endif %}
-    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
-                element.addEventListener('click', (event) => {
-                    let word = event.target.getAttribute('data-word');
-                    const status = event.target.className.split(' ')[1]; // This assumes the status is always the second class
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
+            element.addEventListener('click', (event) => {
+                let word = event.target.getAttribute('data-word');
+                const status = event.target.className.split(' ')[1]; // This assumes the status is always the second class
 
-                    if (status === undefined) {
-                        event.preventDefault();
-                        const input = document.querySelector('#id_word'); // Replace 'id_word' with your actual input id
-                        if (input) {
-                            input.value = word.charAt(0).toUpperCase() + word.slice(1);
-                        }
+                if (status === undefined) {
+                    event.preventDefault();
+                    const input = document.querySelector('#id_word'); // Replace 'id_word' with your actual input id
+                    if (input) {
+                        input.value = word.charAt(0).toUpperCase() + word.slice(1);
                     }
-                });
+                }
             });
+        });
 
-            document.querySelectorAll('.vote-btn').forEach((element) => {
+        function processVote(buttonsSelector, voteInputId, voteFormSelector, voteOutputIds) {
+            document.querySelectorAll(buttonsSelector).forEach((element) => {
                 element.addEventListener('click', (event) => {
                     event.preventDefault();
 
-                    let keywordVoteValue;
-                    if (event.target.id === 'keyword_approve') {
-                        keywordVoteValue = 1;
-                    } else if (event.target.id === 'keyword_reject') {
-                        keywordVoteValue = -1;
+                    let voteValue;
+                    if (event.target.id.endsWith('_approve')) {
+                        voteValue = 1;
+                    } else if (event.target.id.endsWith('_reject')) {
+                        voteValue = -1;
                     } else {
-                        keywordVoteValue = 0;
+                        voteValue = 0;
                     }
 
                     // Set the vote value to the hidden field
-                    let keywordVoteInput = document.getElementById('keyword_vote');
-                    keywordVoteInput.value = keywordVoteValue;
+                    let voteInput = document.getElementById(voteInputId);
+                    voteInput.value = voteValue;
 
                     $.ajax({
                         url : "{% url 'app01:submit_vote' %}",
                         type : "POST",
-                        data : $('.vote-form').serialize(),
+                        data : $(voteFormSelector).serialize(),
 
                         success : function(json) {
-                            // update the keyword stats and status on successful vote
-                            $('#keyword_total_votes').text(json.total_votes);
-                            $('#keyword_total_approve_votes').text(json.total_approve_votes);  // updated
-                            $('#keyword_total_reject_votes').text(json.total_reject_votes);  // updated
-                            $('#keyword_participation_percentage').text(json.participation_percentage);
-                            $('#keyword_approval_percentage').text(json.approval_percentage);
-                            $('#keyword_status').text(json.status);
-                            $('#keyword_user_vote').text(json.user_vote);
+                            // Update the vote statistics and status
+                            $(voteOutputIds.total_votes).text(json.total_votes);
+                            $(voteOutputIds.total_approve_votes).text(json.total_approve_votes);
+                            $(voteOutputIds.total_reject_votes).text(json.total_reject_votes);
+                            $(voteOutputIds.participation_percentage).text(json.participation_percentage);
+                            $(voteOutputIds.approval_percentage).text(json.approval_percentage);
+                            $(voteOutputIds.status).text(json.status);
+                            $(voteOutputIds.user_vote).text(json.user_vote);
 
                             // Update the status class
-                            $('#keyword_status').removeClass('approved proposed rejected alternative');
+                            $(voteOutputIds.status).removeClass('approved proposed rejected alternative');
                             if (json.status === 'Approved') {
-                                $('#keyword_status').addClass('approved');
+                                $(voteOutputIds.status).addClass('approved');
                             } else if (json.status === 'Proposed') {
-                                $('#keyword_status').addClass('proposed');
+                                $(voteOutputIds.status).addClass('proposed');
                             } else if (json.status === 'Rejected') {
-                                $('#keyword_status').addClass('rejected');
+                                $(voteOutputIds.status).addClass('rejected');
                             } else if (json.status === 'Alternative') {
-                                $('#keyword_status').addClass('alternative');
+                                $(voteOutputIds.status).addClass('alternative');
                             }
 
                             // Update the user_vote class
-                            $('#keyword_user_vote').removeClass('approve reject no-vote');
+                            $(voteOutputIds.user_vote).removeClass('approve reject no-vote');
                             if (json.user_vote == 'Approve') {
-                                $('#keyword_user_vote').addClass('approve');
+                                $(voteOutputIds.user_vote).addClass('approve');
                             } else if (json.user_vote == 'Reject') {
-                                $('#keyword_user_vote').addClass('reject');
+                                $(voteOutputIds.user_vote).addClass('reject');
                             } else {
-                                $('#keyword_user_vote').addClass('no-vote');
+                                $(voteOutputIds.user_vote).addClass('no-vote');
                             }
                         },
 
@@ -142,6 +178,27 @@
                     });
                 });
             });
+        }
+
+        processVote('.keyword-vote-btn', 'keyword_vote', '.keyword-vote-form', {
+            total_votes: '#keyword_total_votes',
+            total_approve_votes: '#keyword_total_approve_votes',
+            total_reject_votes: '#keyword_total_reject_votes',
+            participation_percentage: '#keyword_participation_percentage',
+            approval_percentage: '#keyword_approval_percentage',
+            status: '#keyword_status',
+            user_vote: '#keyword_user_vote',
         });
-    </script>
+
+        processVote('.definition-vote-btn', 'keyword_definition_vote', '.definition-vote-form', {
+            total_votes: '#keyword_definition_total_votes',
+            total_approve_votes: '#keyword_definition_total_approve_votes',
+            total_reject_votes: '#keyword_definition_total_reject_votes',
+            participation_percentage: '#keyword_definition_participation_percentage',
+            approval_percentage: '#keyword_definition_approval_percentage',
+            status: '#keyword_definition_status',
+            user_vote: '#keyword_definition_user_vote',
+        });
+    });
+</script>
 {% endblock %}
