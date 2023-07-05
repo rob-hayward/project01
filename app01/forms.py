@@ -11,9 +11,9 @@ from django import forms
 class KeyWordForm(forms.ModelForm):
     word = forms.CharField(max_length=255,
                            widget=forms.TextInput(attrs={'placeholder': 'Choose any word from the Definition text to propose a new Keyword.'}),
-                           label="Propose Keyword")
+                           label="Keyword")
     definition = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed Definition for this new Keyword, within the context of its use here on Digiocracy.'}),
-                                 label="Propose Keyword Definition")
+                                 label="Definition")
 
     class Meta:
         model = KeyWordDefinition
@@ -93,52 +93,6 @@ class VoteForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
         self.instance.user = self.user
-        return super().save(*args, **kwargs)
-
-
-class ProposeKeywordForm(forms.ModelForm):
-    class Meta:
-        model = KeyWord
-        fields = ['word']
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.instance.creator = self.user
-        return super().save(*args, **kwargs)
-
-
-class ProposeKeywordDefinitionForm(forms.ModelForm):
-    class Meta:
-        model = KeyWordDefinition
-        fields = ['keyword', 'definition']
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.instance.creator = self.user
-        return super().save(*args, **kwargs)
-
-
-class ProposeQuestionForm(forms.ModelForm):
-    answer_type = forms.ChoiceField(choices=[(type.name, type.value) for type in AnswerType], widget=forms.Select())
-    question_text = forms.CharField(widget=forms.Textarea)
-    question_tag = forms.ModelChoiceField(queryset=QuestionTag.objects.all(), required=False)
-
-    class Meta:
-        model = Question
-        fields = ['question_tag', 'question_text', 'answer_type']
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-
-    def save(self, *args, **kwargs):
-        self.instance.creator = self.user
         return super().save(*args, **kwargs)
 
 

@@ -7,7 +7,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question, Vote
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, ProposeQuestionForm, VoteForm
+from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, VoteForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseNotAllowed
 from django.views.generic import ListView
@@ -152,111 +152,6 @@ def create_proposals(request):
         'question_error': question_error,
     }
     return render(request, 'app01/create_proposals.html', context)
-
-
-@login_required
-def update_status(request, pk):
-    # Check if the user is an admin
-    if not request.user.is_staff:
-        return HttpResponseForbidden()
-
-    if request.method == 'POST':
-        question = get_object_or_404(Question, pk=pk)
-        form = ChangeStatusForm(request.POST, instance=question)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Status has been updated!')
-        else:
-            messages.error(request, 'An error occurred.')
-        return redirect('app01:approved_changes')
-
-
-class ApprovedChangesView(ListView):
-    model = Question
-    template_name = 'app01/approved_changes.html'
-    context_object_name = 'questions'  # Change this to avoid confusion in the template
-
-    def get_queryset(self):
-        return Question.objects.filter(status=Status.APPROVED.value)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['forms'] = {question.id: ChangeStatusForm(instance=question) for question in context['questions']}
-        return context
-
-
-class QuestionDetailView(DetailView):
-    model = Question
-    template_name = 'app01/question_detail.html'
-
-
-class ProposedChangesView(ListView):
-    model = Question
-    template_name = 'app01/proposed_changes.html'
-
-    def get_queryset(self):
-        return Question.objects.filter(status=Status.PROPOSED.value)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['total_users'] = UserProfile.objects.filter(is_live=True).count()
-        proposed_questions = []
-        for question in context['object_list']:
-            stats, created = ProposalVoteData.objects.get_or_create(question=question)
-            question.total_votes = stats.total_votes
-            question.participation_percentage = stats.participation_percentage
-            question.total_approve_votes = stats.total_approve_votes
-            question.total_reject_votes = stats.total_reject_votes
-            question.approval_percentage = stats.approval_percentage  # This line has changed.
-            try:
-                question.user_vote = ProposalVote.objects.get(user=self.request.user, question=question).vote
-            except ProposalVote.DoesNotExist:
-                question.user_vote = None
-            proposed_questions.append(question)
-        context['proposed_questions'] = proposed_questions
-        return context
-
-
-@login_required
-def propose_question(request, parent_question_id=None):
-    if request.method == 'POST':
-        form = ProposeQuestionForm(request.POST)
-        if form.is_valid():
-            question = form.save(commit=False)
-            question.creator = request.user
-            if parent_question_id is not None:
-                question.parent_question = get_object_or_404(Question, id=parent_question_id)
-            question.save()
-            form.save_m2m()
-            return redirect('app01:proposed_changes')
-        else:
-            print(form.errors.as_ul())
-    else:
-        form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
-    return render(request, 'app01/propose_question.html', {'form': form})
-
-
-
-
-@login_required
-def propose_keyword(request, parent_question_id=None):
-    if request.method == 'POST':
-        form = ProposeKeywordForm(request.POST)
-        if form.is_valid():
-            keyword = form.save(commit=False)
-            question.creator = request.user
-            if parent_question_id is not None:
-                question.parent_question = get_object_or_404(Question, id=parent_question_id)
-            question.save()
-            form.save_m2m()
-            print("Question saved.")
-            return redirect('app01:proposed_changes')
-        else:
-            print("Form is not valid.")
-            print(form.errors.as_ul())
-    else:
-        form = ProposeQuestionForm(initial={'parent_question': parent_question_id} if parent_question_id else None)
-    return render(request, 'app01/propose_question.html', {'form': form})
 
 
 def register(request):

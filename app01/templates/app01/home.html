@@ -5,9 +5,9 @@
     {% if user.is_authenticated %}
         <h3>Hello {{ user.userprofile.preferred_name }}! Welcome to Digiocracy. You are 1 individual in a community of {{ total_users }}.<br>Please join in the conversation by:<br>answering questions<br>voting on proposals<br>discussing proposals<br>creating proposals of your own.<br>Clink on the Digiocracy icon to begin.</h3>
         {% if current_question.id %}
-        <a href="{% url 'app01:propose_question' parent_question_id=current_question.id %}" class="circle-button">Project01</a>
+        <a href="" class="circle-button">Project01</a>
         {% else %}
-        <a href="{% url 'app01:propose_question' %}" class="circle-button">Project01</a>
+        <a href="" class="circle-button">Project01</a>
         {% endif %}
     {% else %}
         <h3 class="mt-3">Hello World! Welcome to Digiocracy.<br>A community of {{ total_users }} individuals collaborating towards a better World. <br>Please click on the Digiocracy icon to join the conversation.</h3>
