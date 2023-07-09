@@ -1,3 +1,5 @@
+import { updatePieChart } from './binary_pie_chart.js';
+
 document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
                         data : $(voteFormSelector).serialize(),
 
                         success : function(json) {
+                            console.log(json);
                             // Update the vote statistics and status
                             $(voteOutputIds.total_votes).text(json.total_votes);
                             $(voteOutputIds.total_approve_votes).text(json.total_approve_votes);
@@ -46,6 +49,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
                             $(voteOutputIds.approval_percentage).text(json.approval_percentage);
                             $(voteOutputIds.status).text(json.status);
                             $(voteOutputIds.user_vote).text(json.user_vote);
+
+                            // Update the pie charts
+                            if (buttonsSelector == ".keyword-vote-btn") {
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, 'keyword-pie-chart');
+                            } else if (buttonsSelector == ".definition-vote-btn") {
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, 'definition-pie-chart');
+                            }
 
                             // Update the status class
                             $(voteOutputIds.status).removeClass('approved proposed rejected alternative');
