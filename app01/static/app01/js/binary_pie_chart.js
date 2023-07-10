@@ -1,6 +1,6 @@
 function drawPieChart(data, elementId) {
-  const width = 464;
-  const height = Math.min(width, 250);
+  const width = 618.7;
+  const height = Math.min(width, 333.3);
 
   const color = d3.scaleOrdinal()
       .domain(data.map(d => d.name))
@@ -46,13 +46,13 @@ function drawPieChart(data, elementId) {
     .attr("transform", d => `translate(${arcLabel.centroid(d)})`)
     .style("fill", "white")  // Make the text color white
     .style("font-weight", "bold")  // Make the text bold
-    .style("font-size", "12px") // Increase the font size
+    .style("font-size", "2em") // Increase the font size
     .call(text => text.append("tspan")
-        .attr("y", "-0.4em")
+        .attr("y", "-0.0em")
         .text(d => `${d.data.name} Votes: ${d.data.value.toLocaleString("en-US")}`)) // Combine label and votes
     .call(text => text.append("tspan")
         .attr("x", 0)
-        .attr("y", "0.7em")
+        .attr("y", "0.8em")
         .attr("fill-opacity", 0.7)
         .text(d => `${d.data.percentage}%`));
 
@@ -61,12 +61,13 @@ function drawPieChart(data, elementId) {
   document.getElementById(elementId).appendChild(svg.node());
 }
 
-// Call this function whenever the AJAX request successfully updates the vote data
 function updatePieChart(approveVotes, rejectVotes, approvePercentage, rejectPercentage, elementId) {
   const data = [
     { name: 'Approve', value: approveVotes, percentage: approvePercentage },
     { name: 'Reject', value: rejectVotes, percentage: rejectPercentage }
   ];
+
+  data.sort((a, b) => a.name.localeCompare(b.name));
 
   // Clear the existing chart
   document.getElementById(elementId).innerHTML = '';
