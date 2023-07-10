@@ -9,6 +9,7 @@
         <p>Current keyword status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
     </div>
     <div>
+        <p>This vote has {{ keyword.participation_percentage }}% participation with a total of {{ keyword.total_votes }} votes from our community of {{ total_users }}.</p>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
             <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
@@ -57,6 +58,7 @@
         </p>
     </div>
     <div>
+        <p>This vote has {{ keyword.definition.participation_percentage }}% participation with a total of {{ keyword.definition.total_votes }} votes from our community of {{ total_users }}.</p>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve this definition of the keyword '{{ keyword.word }}'is:
             <span id="keyword_definition_user_vote" class="{{ keyword_definition_user_vote|lower }}">{{ keyword_definition_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>

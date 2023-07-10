@@ -16,6 +16,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         });
 
+        function renderInitialPieCharts() {
+            let keyword_total_approve_votes = parseInt(document.querySelector('#keyword_total_approve_votes').textContent);
+            let keyword_total_reject_votes = parseInt(document.querySelector('#keyword_total_reject_votes').textContent);
+            let keyword_approval_percentage = parseFloat(document.querySelector('#keyword_approval_percentage').textContent);
+            updatePieChart(keyword_total_approve_votes, keyword_total_reject_votes, keyword_approval_percentage, 100 - keyword_approval_percentage, 'keyword-pie-chart');
+
+            let keyword_definition_total_approve_votes = parseInt(document.querySelector('#keyword_definition_total_approve_votes').textContent);
+            let keyword_definition_total_reject_votes = parseInt(document.querySelector('#keyword_definition_total_reject_votes').textContent);
+            let keyword_definition_approval_percentage = parseFloat(document.querySelector('#keyword_definition_approval_percentage').textContent);
+            updatePieChart(keyword_definition_total_approve_votes, keyword_definition_total_reject_votes, keyword_definition_approval_percentage, 100 - keyword_definition_approval_percentage, 'definition-pie-chart');
+        }
+
         function processVote(buttonsSelector, voteInputId, voteFormSelector, voteOutputIds) {
             document.querySelectorAll(buttonsSelector).forEach((element) => {
                 element.addEventListener('click', (event) => {
@@ -52,9 +64,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
                             // Update the pie charts
                             if (buttonsSelector == ".keyword-vote-btn") {
-                                updatePieChart(json.total_approve_votes, json.total_reject_votes, 'keyword-pie-chart');
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'keyword-pie-chart');
                             } else if (buttonsSelector == ".definition-vote-btn") {
-                                updatePieChart(json.total_approve_votes, json.total_reject_votes, 'definition-pie-chart');
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'definition-pie-chart');
                             }
 
                             // Update the status class
@@ -87,6 +99,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 });
             });
         }
+
+        renderInitialPieCharts();
 
         processVote('.keyword-vote-btn', 'keyword_vote', '.keyword-vote-form', {
             total_votes: '#keyword_total_votes',

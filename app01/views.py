@@ -57,6 +57,7 @@ def keyword_detail(request, keyword):
     keyword_obj = get_object_or_404(KeyWord, word=keyword)
     keyword_definition_obj = keyword_obj.definition
     keyword_error = None
+    total_users = UserProfile.objects.filter(is_live=True).count()
 
     keyword_votable_type = ContentType.objects.get_for_model(keyword_obj)
     keyword_definition_votable_type = ContentType.objects.get_for_model(keyword_definition_obj)
@@ -78,6 +79,7 @@ def keyword_detail(request, keyword):
     keyword_definition_user_vote = keyword_definition_obj.get_user_vote(request.user)
 
     context = {
+        'total_users': total_users,
         'keyword': keyword_obj,
         'keyword_definition': keyword_definition_obj,
         'keyword_form': keyword_form,

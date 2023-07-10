@@ -39,30 +39,33 @@ function drawPieChart(data, elementId) {
       .text(d => `${d.data.name}: ${d.data.value.toLocaleString("en-US")}`);
 
   svg.append("g")
-      .attr("text-anchor", "middle")
-    .selectAll("text")
-    .data(arcs)
-    .join("text")
-      .attr("transform", d => `translate(${arcLabel.centroid(d)})`)
-      .call(text => text.append("tspan")
-          .attr("y", "-0.4em")
-          .attr("font-weight", "bold")
-          .text(d => d.data.name))
-      .call(text => text.filter(d => (d.endAngle - d.startAngle) > 0.25).append("tspan")
-          .attr("x", 0)
-          .attr("y", "0.7em")
-          .attr("fill-opacity", 0.7)
-          .text(d => d.data.value.toLocaleString("en-US")));
+    .attr("text-anchor", "middle")
+  .selectAll("text")
+  .data(arcs)
+  .join("text")
+    .attr("transform", d => `translate(${arcLabel.centroid(d)})`)
+    .style("fill", "white")  // Make the text color white
+    .style("font-weight", "bold")  // Make the text bold
+    .style("font-size", "12px") // Increase the font size
+    .call(text => text.append("tspan")
+        .attr("y", "-0.4em")
+        .text(d => `${d.data.name} Votes: ${d.data.value.toLocaleString("en-US")}`)) // Combine label and votes
+    .call(text => text.append("tspan")
+        .attr("x", 0)
+        .attr("y", "0.7em")
+        .attr("fill-opacity", 0.7)
+        .text(d => `${d.data.percentage}%`));
+
 
   // Insert the SVG into your HTML
   document.getElementById(elementId).appendChild(svg.node());
 }
 
 // Call this function whenever the AJAX request successfully updates the vote data
-function updatePieChart(approveVotes, rejectVotes, elementId) {
+function updatePieChart(approveVotes, rejectVotes, approvePercentage, rejectPercentage, elementId) {
   const data = [
-    { name: 'Approve', value: approveVotes },
-    { name: 'Reject', value: rejectVotes }
+    { name: 'Approve', value: approveVotes, percentage: approvePercentage },
+    { name: 'Reject', value: rejectVotes, percentage: rejectPercentage }
   ];
 
   // Clear the existing chart
