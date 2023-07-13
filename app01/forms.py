@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from .models import UserProfile, Vote, VoteType, KeyWord, KeyWordDefinition, Question, AnswerType, QuestionTag
 from django_countries.fields import CountryField
 from django_countries.widgets import CountrySelectWidget
-from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django import forms
+from django_select2 import forms as s2forms
+from .models import KeyWord, QuestionTag, Question, AnswerType
 
 
 class KeyWordForm(forms.ModelForm):
@@ -43,36 +44,44 @@ class KeyWordForm(forms.ModelForm):
 
 
 class QuestionForm(forms.ModelForm):
-    question_tag = forms.ModelMultipleChoiceField(
-        queryset=KeyWord.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
-        help_text='Select one or more Key Words to create a unique Question Tag relating to your proposed question.',
-        label="Question Tag"
+    question_text = forms.CharField(
+        widget=forms.Textarea(attrs={'placeholder': 'Enter your question text.'}),
+        label="Question Text"
     )
-    question_text = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed question here.'}),
-                                    label="Question Text")
-
-    answer_type = forms.ChoiceField(choices=[(answer_type.name, answer_type.value) for answer_type in AnswerType],
-                                    label="Answer Type")
+    answer_type = forms.ChoiceField(
+        choices=[(answer_type.name, answer_type.value) for answer_type in AnswerType],
+        label="Answer Type"
+    )
+    keywords = forms.ModelMultipleChoiceField(
+        queryset=KeyWord.objects.all(),
+        widget=s2forms.Select2MultipleWidget
+    )
 
     class Meta:
-        model = QuestionTag
-        fields = ['question_tag', 'question_text', 'answer_type']
+        model = Question
+        fields = ['keywords', 'question_text', 'answer_type']
 
-    def save(self, commit=True, creator=None):  # Added creator parameter
+    def save(self, commit=True, creator=None, parent=None):
+        keywords = self.cleaned_data.get('keywords')
         question_text = self.cleaned_data.get('question_text')
-        question_tag = self.cleaned_data.get('question_tag')
         answer_type = self.cleaned_data.get('answer_type')
 
-        question_tag = super(QuestionForm, self).save(commit=False)
-        question = Question.objects.create(question_text=question_text, answer_type=answer_type, creator=creator)  # Assign the creator here
-        question_tag.question = question
+        # Create QuestionTag instance first
+        question_tag = QuestionTag.objects.create(creator=creator)
+        question_tag.keywords.set(keywords)
+        question_tag.save()
 
+        # Then, create Question instance and assign the created QuestionTag to the Question
+        question = super(QuestionForm, self).save(commit=False)
+        question.creator = creator
+        question.question_tag = question_tag
         if commit:
-            question_tag.save()
-            self.save_m2m()  # This is needed to save ManyToManyField data
+            question.save()
 
-        return question_tag
+            if parent:  # If a parent question is passed, add the new question as its child
+                parent.children.add(question)
+
+        return question
 
 
 class VoteForm(forms.ModelForm):

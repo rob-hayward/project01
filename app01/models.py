@@ -152,7 +152,6 @@ class Vote(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if is_new:
-            print(dir(self.votable))
             self.votable.calculate_status()
 
 
@@ -176,8 +175,6 @@ class KeyWordDefinition(Votable):
 
 
 class QuestionTag(Votable):
-    parent_tag = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_tags')
-    question = models.ForeignKey('Question', on_delete=models.CASCADE)
     keywords = models.ManyToManyField(KeyWord)
 
     def __str__(self):
@@ -185,7 +182,7 @@ class QuestionTag(Votable):
 
 
 class Question(Votable):
-    question_tag = models.ForeignKey(QuestionTag, on_delete=models.CASCADE, related_name="questions")
+    question_tag = models.OneToOneField(QuestionTag, on_delete=models.CASCADE, related_name="question")
     question_text = models.TextField()
     answer_type = models.CharField(
         max_length=30,

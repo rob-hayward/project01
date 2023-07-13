@@ -18,6 +18,10 @@
     <h3>Create Question</h3>
     <form method="post">
         {% csrf_token %}
+        <div class="form-group">
+            <label for="question_tag">Question Tag</label>
+            <input type="text" id="question_tag" class="form-control" readonly>
+        </div>
         {{ question_form|crispy }}
         {% if question_error %}
             <div class="alert alert-danger">
@@ -26,9 +30,19 @@
         {% endif %}
         <button type="submit" name="question_submit">Submit Question</button>
     </form>
+{% endblock %}
 
+{% block extra_js %}
     <script>
-    // Add JavaScript here to detect when the user has finished typing in a word,
-    // make an AJAX request to check if it exists in the database, and highlight it if it does.
+        $(document).ready(function() {
+            $('#id_keywords').select2({
+                placeholder: 'Select keywords',
+                allowClear: true,
+            }).on('change', function() {
+                var selectedOptions = $('#id_keywords').select2('data');
+                var selectedKeywords = selectedOptions.map(function(option) { return option.text; }).join(', ');
+                $('#question_tag').val(selectedKeywords);
+            });
+        });
     </script>
 {% endblock %}
