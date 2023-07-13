@@ -1,0 +1,77 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+
+    <div style="display: flex; align-items: baseline;">
+        <h1 style="margin-right: 20px;">{{ question.question }}</h1>
+        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+    </div>
+
+    <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question '{{ question.question }}' for this project is:
+            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
+        <p>You can change your vote anytime using the buttons below.</p>
+        <form class="question-vote-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="votable_content_type" value="{{ question_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_obj }}">
+            <input type="hidden" id="question_vote" name="vote">
+            <button type="button" class="question-vote-btn" id="question_approve" value="1">Approve</button>
+            <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
+            <button type="button" class="question-vote-btn" id="question_no_vote" value="0">No Vote</button>
+        </form>
+    </div>
+
+    <div style="display: flex; align-items: baseline;">
+        <h2 style="margin-right: 20px;">{{ question.question }} proposal:</h2>
+        <p>Current proposal status: <span id="question_proposal_status" class="{{ question_proposal.status|lower }}">{{ question_proposal.status }}</span></p>
+    </div>
+
+    <div>
+        <p>
+            {% if question_proposal.proposal %}
+                {{ question_proposal.proposal|highlight_keywords }}
+            {% else %}
+                "No proposal available"
+            {% endif %}
+        </p>
+    </div>
+
+    <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this proposal for the question '{{ question.question }}' is:
+            <span id="question_proposal_user_vote" class="{{ question_proposal_user_vote|lower }}">{{ question_proposal_user_vote }}</span></p>
+        <p>You can change your vote anytime using the buttons below.</p>
+        <form class="proposal-vote-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="votable_content_type" value="{{ question_proposal_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_proposal_obj }}">
+            <input type="hidden" id="question_proposal_vote" name="vote">
+            <button type="button" class="proposal-vote-btn" id="question_proposal_approve" value="1">Approve</button>
+            <button type="button" class="proposal-vote-btn" id="question_proposal_reject" value="-1">Reject</button>
+            <button type="button" class="proposal-vote-btn" id="question_proposal_no_vote" value="0">No Vote</button>
+        </form>
+    </div>
+
+    <h2>Propose a new Question and Proposal:</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ question_form|crispy }}
+        <input type="submit" class="propose-btn" name="question_submit" value="Propose">
+    </form>
+    {% if question_error %}
+        <div class="alert alert-danger" role="alert">
+            {{ question_error }}
+        </div>
+    {% endif %}
+{% endblock %}
+
+<!--{% block extra_js %}-->
+<!--    <script>-->
+<!--        const voteUrl = "{% url 'app01:submit_vote' %}";-->
+<!--    </script>-->
+<!--    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>-->
+<!--    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>-->
+<!--{% endblock %}-->

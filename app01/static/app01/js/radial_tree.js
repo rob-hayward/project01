@@ -1,4 +1,4 @@
-function createRadialTree(data) {
+function createRadialTree(data, containerId, detailUrl) {
   // Specify the chart’s dimensions.
   const width = 928;
   const height = width;
@@ -45,11 +45,9 @@ function createRadialTree(data) {
       .attr("fill", d => d.children ? "#555" : "#999")
       .attr("r", 2.5)
       .on("click", d => {
-      // When a node is clicked, navigate to the keyword detail page
-      console.log(`Navigating to keyword: ${d.data.name}`);
-      window.location.href = `/keyword/${d.data.name}/`;
-      window.location.href = url;
-    });
+        console.log(`Navigating to detail page for: ${d.data.name}`);
+        window.location.href = `${detailUrl}${d.data.name}/`;
+      });
 
   // Append labels.
   svg.append("g")
@@ -67,6 +65,6 @@ function createRadialTree(data) {
       .attr("fill", "currentColor")
       .text(d => d.data.name);
 
-  // Attach the generated SVG to the div with id "keywordTree"
-  document.getElementById("keywordTree").appendChild(svg.node());
+  // Attach the generated SVG to the div with id "containerId"
+  document.getElementById(containerId).appendChild(svg.node());
 }

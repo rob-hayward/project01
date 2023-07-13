@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django import forms
 from django_select2 import forms as s2forms
 from .models import KeyWord, QuestionTag, Question, AnswerType
+from django.db import transaction
 
 
 class KeyWordForm(forms.ModelForm):
@@ -61,25 +62,24 @@ class QuestionForm(forms.ModelForm):
         model = Question
         fields = ['keywords', 'question_text', 'answer_type']
 
-    def save(self, commit=True, creator=None, parent=None):
+    def save(self, commit=True):
         keywords = self.cleaned_data.get('keywords')
         question_text = self.cleaned_data.get('question_text')
         answer_type = self.cleaned_data.get('answer_type')
 
-        # Create QuestionTag instance first
-        question_tag = QuestionTag.objects.create(creator=creator)
-        question_tag.keywords.set(keywords)
-        question_tag.save()
+        # Use atomic transaction to ensure all db operations are successful
+        with transaction.atomic():
+            # Create QuestionTag instance first
+            question_tag = QuestionTag.objects.create()
+            question_tag.keywords.set(keywords)
+            question_tag.save()
 
-        # Then, create Question instance and assign the created QuestionTag to the Question
-        question = super(QuestionForm, self).save(commit=False)
-        question.creator = creator
-        question.question_tag = question_tag
-        if commit:
-            question.save()
+            # Then, create Question instance and assign the created QuestionTag to the Question
+            question = super(QuestionForm, self).save(commit=False)
+            question.question_tag = question_tag
 
-            if parent:  # If a parent question is passed, add the new question as its child
-                parent.children.add(question)
+            if commit:
+                question.save()
 
         return question
 

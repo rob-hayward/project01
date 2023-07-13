@@ -18,6 +18,7 @@ from django.http import HttpResponseForbidden
 from .forms import KeyWordForm, QuestionForm
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.http import Http404
 
 
 def submit_vote(request):
@@ -50,6 +51,61 @@ def submit_vote(request):
             return JsonResponse(data)
     else:
         return HttpResponseNotAllowed(['POST'])
+
+
+@login_required
+def question_detail(request, question_tag):
+    try:
+        keyword = KeyWord.objects.get(word=question_tag)
+        question_tag_obj = keyword.questiontag_set.first()
+        question_obj = Question.objects.get(question_tag=question_tag_obj)
+    except ObjectDoesNotExist:
+        raise Http404("No Question matches the given query.")
+
+    question_error = None
+    total_users = UserProfile.objects.filter(is_live=True).count()
+
+    question_content_type = ContentType.objects.get_for_model(question_obj)
+    question_tag_content_type = ContentType.objects.get_for_model(question_tag_obj)
+
+    if request.method == 'POST' and 'question_submit' in request.POST:
+        question_form = QuestionForm(request.POST)
+        if question_form.is_valid():
+            try:
+                new_question = question_form.save(commit=False)
+                new_question.creator = request.user
+                new_question.parent = question_obj
+                new_question.save()
+                return redirect(new_question.get_absolute_url())
+            except forms.ValidationError as e:
+                question_error = str(e)
+
+    else:
+        question_form = QuestionForm()
+
+    question_vote_data = question_obj.get_vote_data()
+    question_user_vote = question_obj.get_user_vote(request.user)
+    question_tag_vote_data = question_tag_obj.get_vote_data()
+    question_tag_user_vote = question_tag_obj.get_user_vote(request.user)
+
+    context = {
+        'total_users': total_users,
+        'question': question_obj,
+        'question_text': question_obj.question_text,
+        'question_tag': question_tag_obj,
+        'question_form': question_form,
+        'question_error': question_error,
+        'question_content_type_id': question_content_type.id,
+        'question_obj_id': question_obj.id,
+        'question_user_vote': question_user_vote,
+        'question_tag_content_type_id': question_tag_content_type.id,
+        'question_tag_obj_id': question_tag_obj.id,
+        'question_tag_user_vote': question_tag_user_vote,
+    }
+    context.update(question_vote_data)
+    context.update(question_tag_vote_data)
+
+    return render(request, 'app01/question_detail.html', context)
 
 
 @login_required
@@ -97,10 +153,34 @@ def keyword_detail(request, keyword):
     return render(request, 'app01/keyword_detail.html', context)
 
 
+def question_json(request):
+    try:
+        # Get the root question
+        root_question = Question.objects.first()  # ID of first question == 10
+    except ObjectDoesNotExist:
+        return HttpResponse("Root question does not exist.", status=404)
+
+    # Recursive function to build the tree
+    def build_tree(question):
+        return {
+            "name": str(question.question_tag),  # Add this line to ensure the question_tag is serialized
+            "children": [build_tree(child) for child in question.children.all()],
+            "question_text": question.question_text if hasattr(question, 'question_text') else ""
+        }
+
+    # Build the tree and return as JSON
+    tree = build_tree(root_question)
+    return JsonResponse(tree, safe=False)
+
+
+def question_tree(request):
+    return render(request, 'app01/question_tree.html')
+
+
 def keyword_json(request):
     try:
         # Get the root keyword
-        root_keyword = KeyWord.objects.get(id=2)  # ids start from 1 not 0
+        root_keyword = KeyWord.objects.first()  # changed from: KeyWord.objects.get(id=2)
     except ObjectDoesNotExist:
         return HttpResponse("Root keyword does not exist.", status=404)
 

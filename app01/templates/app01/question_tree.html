@@ -2,21 +2,19 @@
 {% load static %}
 
 {% block content %}
-    <div id="keywordTree"></div>
+    <div id="QuestionTree"></div>
 
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="{% static 'app01/js/radial_tree.js' %}"></script>
 
     <script>
     // Fetch the tree data from the server
-    fetch('{% url 'app01:keyword_json' %}')
+    fetch('{% url 'app01:question_json' %}')
         .then(response => response.json())
         .then(data => {
             console.log(data);
             // Pass the data to your D3 script to render the tree
-            createRadialTree(data, "keywordTree", "/keyword/");  // Pass the container ID as a second argument
+            createRadialTree(data, "QuestionTree", "/question/");  // Pass the container ID as a second argument
         });
     </script>
 {% endblock %}
-
-
