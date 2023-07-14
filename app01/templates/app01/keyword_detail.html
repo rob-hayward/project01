@@ -54,6 +54,7 @@
             {% endif %}
         </p>
     </div>
+
     <div>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve this definition of the keyword '{{ keyword.word }}'is:
             <span id="keyword_definition_user_vote" class="{{ keyword_definition_user_vote|lower }}">{{ keyword_definition_user_vote }}</span></p>
@@ -68,6 +69,7 @@
             <button type="button" class="definition-vote-btn" id="keyword_definition_no_vote" value="0">No Vote</button>
         </form>
     </div>
+
 <div class="keyword-definition-stats">
     <h5>Community vote data for the definition of {{ keyword.word }}:</h5>
     <p>Of our {{ total_users }} community members, <span id="keyword_definition_total_votes">{{ keyword.definition.total_votes }}</span> have voted on this subject, a participation percentage of <span id="keyword_definition_participation_percentage">{{ keyword.definition.participation_percentage }}</span>%.</p>

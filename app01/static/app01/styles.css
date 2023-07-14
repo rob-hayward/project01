@@ -119,7 +119,7 @@ tr:hover {
   overflow: auto;
 }
 
-.keyword-vote-btn, .definition-vote-btn, .propose-btn {
+.keyword-vote-btn, .definition-vote-btn, .propose-btn, .question-tag-vote-btn, .question-vote-btn {
   display: inline-block;
   font-size: 1rem; /* Change as needed */
   text-align: center;
@@ -154,70 +154,70 @@ div {
   box-shadow: 0 0 0 2px var(--proposed);
 }
 
-#keyword_approve, #keyword_definition_approve {
+#keyword_approve, #keyword_definition_approve, #question_tag_approve, #question_approve {
   background-color: var(--approved);
 }
 
-#keyword_approve:hover, #keyword_definition_approve:hover  {
+#keyword_approve:hover, #keyword_definition_approve:hover, #question_tag_approve:hover, #question_approve:hover  {
   color: var(--approved);
   background-color: #ffffff;
   box-shadow: 0 0 0 2px var(--approved);
 }
 
-#keyword_reject, #keyword_definition_reject {
+#keyword_reject, #keyword_definition_reject, #question_tag_reject, #question_reject {
   background-color: var(--rejected);
 }
 
-#keyword_reject:hover, #keyword_definition_reject:hover {
+#keyword_reject:hover, #keyword_definition_reject:hover, #question_tag_reject:hover, #question_reject:hover {
   color: var(--rejected);
   background-color: #ffffff;
   box-shadow: 0 0 0 2px var(--rejected);
 }
 
-#keyword_no_vote, #keyword_definition_no_vote {
+#keyword_no_vote, #keyword_definition_no_vote, #question_tag_no_vote, #question_no_vote {
   background-color: var(--no-vote);
 }
 
-#keyword_no_vote:hover, #keyword_definition_no_vote:hover {
+#keyword_no_vote:hover, #keyword_definition_no_vote:hover, #question_tag_no_vote:hover, #question_no_vote:hover {
   color: var(--no-vote);
   background-color: #ffffff;
   box-shadow: 0 0 0 2px var(--no-vote);
 }
 
 
-span#keyword_status, span#keyword_definition_status {
+span#keyword_status, span#keyword_definition_status, span#question_tag_status, span#question_status {
   font-weight: bold;
 }
 
-span#keyword_status.proposed, span#keyword_definition_status.proposed {
+span#keyword_status.proposed, span#keyword_definition_status.proposed, span#question_tag_status.proposed, span#question_status.proposed {
   color: var(--proposed);
 }
 
-span#keyword_status.approved, span#keyword_definition_status.approved {
+span#keyword_status.approved, span#keyword_definition_status.approved, span#question_tag_status.approved, span#question_status.approved {
   color: var(--approved);
 }
 
-span#keyword_status.rejected, span#keyword_definition_status.rejected {
+span#keyword_status.rejected, span#keyword_definition_status.rejected, span#question_tag_status.rejected, span#question_status.rejected {
   color: var(--rejected);
 }
 
-span#keyword_status.alternative, span#keyword_definition_status.alternative {
+span#keyword_status.alternative, span#keyword_definition_status.alternative, span#question_tag_status.alternative, span#question_status.alternative {
   color: var(--alternative);
 }
 
-span#keyword_user_vote, span#keyword_definition_user_vote {
+span#keyword_user_vote, span#keyword_definition_user_vote, span#question_tag_user_vote, span#question_user_vote {
   font-weight: bold;
 }
 
-span#keyword_user_vote.approve, span#keyword_definition_user_vote.approve {
+span#keyword_user_vote.approve, span#keyword_definition_user_vote.approve, , span#question_tag_user_vote.approve, span#question_user_vote.approve {
   color: var(--approved);
 }
 
-span#keyword_user_vote.reject, span#keyword_definition_user_vote.reject {
+span#keyword_user_vote.reject, span#keyword_definition_user_vote.reject, span#question_tag_user_vote.reject, span#question_user_vote.reject {
   color: var(--rejected);
 }
 
-span#keyword_user_vote.no-vote, span#keyword_definition_user_vote.no-vote {
+span#keyword_user_vote.no-vote, span#keyword_definition_user_vote.no-vote, span#question_tag_user_vote.no-vote, span#question_user_vote.no-vote {
   color: var(--no-vote);
 }
 

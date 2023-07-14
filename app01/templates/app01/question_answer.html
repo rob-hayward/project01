@@ -1,0 +1,43 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+
+    <div style="display: flex; align-items: baseline;">
+        <h1 style="margin-right: 20px;">{{ question_tag }}</h1>
+        <p>Current question tag status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
+    </div>
+
+    <div>
+        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+        <p>
+            {% if question.question_text %}
+                {{ question.question_text|highlight_keywords }}
+            {% else %}
+                "No question text available"
+            {% endif %}
+        </p>
+    </div>
+
+    <h2>Propose a new Question and Proposal:</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ question_form|crispy }}
+        <input type="submit" class="propose-btn" name="question_submit" value="Propose">
+    </form>
+    {% if question_error %}
+        <div class="alert alert-danger" role="alert">
+            {{ question_error }}
+        </div>
+    {% endif %}
+{% endblock %}
+
+<!--{% block extra_js %}-->
+<!--    <script>-->
+<!--        const voteUrl = "{% url 'app01:submit_vote' %}";-->
+<!--    </script>-->
+<!--    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>-->
+<!--    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>-->
+<!--{% endblock %}-->

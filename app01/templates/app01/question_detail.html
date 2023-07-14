@@ -6,52 +6,52 @@
 {% block content %}
 
     <div style="display: flex; align-items: baseline;">
-        <h1 style="margin-right: 20px;">{{ question.question }}</h1>
-        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+        <h1 style="margin-right: 20px;">{{ question_tag }}</h1>
+        <p>Current question tag status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
     </div>
 
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question '{{ question.question }}' for this project is:
-            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question tag '{{ question_tag }}' for this project is:
+            <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
-        <form class="question-vote-form" method="post">
+        <form class="question-tag-vote-form" method="post">
             {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ question_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ question_obj }}">
-            <input type="hidden" id="question_vote" name="vote">
-            <button type="button" class="question-vote-btn" id="question_approve" value="1">Approve</button>
-            <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
-            <button type="button" class="question-vote-btn" id="question_no_vote" value="0">No Vote</button>
+            <input type="hidden" name="votable_content_type" value="{{ question_tag_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_tag_obj }}">
+            <input type="hidden" id="question_tag_vote" name="vote">
+            <button type="button" class="question-tag-vote-btn" id="question_tag_approve" value="1">Approve</button>
+            <button type="button" class="question-tag-vote-btn" id="question_tag_reject" value="-1">Reject</button>
+            <button type="button" class="question-tag-vote-btn" id="question_tag_no_vote" value="0">No Vote</button>
         </form>
     </div>
 
     <div style="display: flex; align-items: baseline;">
-        <h2 style="margin-right: 20px;">{{ question.question }} proposal:</h2>
-        <p>Current proposal status: <span id="question_proposal_status" class="{{ question_proposal.status|lower }}">{{ question_proposal.status }}</span></p>
+        <h2 style="margin-right: 20px;">{{ question_tag }} question:</h2>
+        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
     </div>
 
     <div>
         <p>
-            {% if question_proposal.proposal %}
-                {{ question_proposal.proposal|highlight_keywords }}
+            {% if question.question_text %}
+                {{ question.question_text|highlight_keywords }}
             {% else %}
-                "No proposal available"
+                "No question text available"
             {% endif %}
         </p>
     </div>
 
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this proposal for the question '{{ question.question }}' is:
-            <span id="question_proposal_user_vote" class="{{ question_proposal_user_vote|lower }}">{{ question_proposal_user_vote }}</span></p>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this '{{ question_tag }}' question is:
+            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
-        <form class="proposal-vote-form" method="post">
+        <form class="question-vote-form" method="post">
             {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ question_proposal_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ question_proposal_obj }}">
-            <input type="hidden" id="question_proposal_vote" name="vote">
-            <button type="button" class="proposal-vote-btn" id="question_proposal_approve" value="1">Approve</button>
-            <button type="button" class="proposal-vote-btn" id="question_proposal_reject" value="-1">Reject</button>
-            <button type="button" class="proposal-vote-btn" id="question_proposal_no_vote" value="0">No Vote</button>
+            <input type="hidden" name="votable_content_type" value="{{ question_text_votable_type }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_text_obj }}">
+            <input type="hidden" id="question_vote" name="vote">
+            <button type="button" class="question-vote-btn" id="question_approve" value="1">Approve</button>
+            <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
+            <button type="button" class="question-vote-btn" id="question_no_vote" value="0">No Vote</button>
         </form>
     </div>
 
