@@ -3,8 +3,8 @@ function drawPieChart(data, elementId) {
   const height = Math.min(width, 333.3);
 
   const color = d3.scaleOrdinal()
-      .domain(data.map(d => d.name))
-      .range(["#00DFA2", "#FF0060"]);
+      .domain(['Approve', 'Reject', 'No Vote'])
+      .range(["#00DFA2", "#FF0060", "#454545"]);
 
   const pie = d3.pie()
       .sort(null)
@@ -39,33 +39,48 @@ function drawPieChart(data, elementId) {
       .text(d => `${d.data.name}: ${d.data.value.toLocaleString("en-US")}`);
 
   svg.append("g")
-    .attr("text-anchor", "middle")
-  .selectAll("text")
-  .data(arcs)
-  .join("text")
-    .attr("transform", d => `translate(${arcLabel.centroid(d)})`)
-    .style("fill", "white")  // Make the text color white
-    .style("font-weight", "bold")  // Make the text bold
-    .style("font-size", "2em") // Increase the font size
-    .call(text => text.append("tspan")
-        .attr("y", "-0.0em")
-        .text(d => `${d.data.name} Votes: ${d.data.value.toLocaleString("en-US")}`)) // Combine label and votes
+  .attr("text-anchor", "middle")
+.selectAll("text")
+.data(arcs)
+.join("text")
+  .attr("transform", d => `translate(${arcLabel.centroid(d)})`)
+  .style("fill", "white")  // Make the text color white
+  .style("font-weight", "bold")  // Make the text bold
+  .style("font-size", "2em") // Increase the font size
+.call(text => {
+  if (text.datum().data.name === 'No Vote') {
+    text.text('No Votes');
+  } else {
+    text.append("tspan")
+      .attr("y", "-0.0em")
+      .text(d => `${d.data.name} Votes: ${d.data.value.toLocaleString("en-US")}`) // Combine label and votes
     .call(text => text.append("tspan")
         .attr("x", 0)
         .attr("y", "0.8em")
         .attr("fill-opacity", 0.7)
         .text(d => `${d.data.percentage}%`));
-
+  }
+});
 
   // Insert the SVG into your HTML
   document.getElementById(elementId).appendChild(svg.node());
 }
 
 function updatePieChart(approveVotes, rejectVotes, approvePercentage, rejectPercentage, elementId) {
-  const data = [
-    { name: 'Approve', value: approveVotes, percentage: approvePercentage },
-    { name: 'Reject', value: rejectVotes, percentage: rejectPercentage }
-  ];
+  let data;
+
+  if (approveVotes === 0 && rejectVotes === 0) {
+    // All votes are 'No Vote'
+    data = [
+      { name: 'No Vote', value: 1, percentage: 100 }
+    ];
+  } else {
+    // Some votes are 'Approve' or 'Reject'
+    data = [
+      { name: 'Approve', value: approveVotes, percentage: approvePercentage },
+      { name: 'Reject', value: rejectVotes, percentage: rejectPercentage }
+    ];
+  }
 
   data.sort((a, b) => a.name.localeCompare(b.name));
 

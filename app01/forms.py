@@ -87,7 +87,7 @@ class QuestionForm(forms.ModelForm):
 class VoteForm(forms.ModelForm):
     votable_object_id = forms.IntegerField(widget=forms.HiddenInput())
     votable_content_type = forms.ModelChoiceField(
-        queryset=ContentType.objects.filter(model__in=['keyword', 'keyworddefinition', 'question_tag', 'question']),
+        queryset=ContentType.objects.filter(model__in=['keyword', 'keyworddefinition', 'questiontag', 'question']),
         widget=forms.HiddenInput()
     )
     vote = forms.ChoiceField(choices=VoteType.choices(), widget=forms.RadioSelect, required=False)

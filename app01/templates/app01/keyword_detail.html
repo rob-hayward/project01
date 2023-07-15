@@ -24,7 +24,7 @@
         </form>
     </div>
 <div class="keyword-stats">
-            <h5>Community vote data for keyword {{ keyword.word }}:</h5>
+            <h5>Community vote data for keyword '{{ keyword.word }}':</h5>
     <p>Of our {{ total_users }} community members, <span id="keyword_total_votes">{{ keyword.total_votes }}</span> have voted on this subject, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.</p>
             <div id="keyword-pie-chart" style="width: 100%; height: 333px;"></div>
             <table style="display: none;">
@@ -71,7 +71,7 @@
     </div>
 
 <div class="keyword-definition-stats">
-    <h5>Community vote data for the definition of {{ keyword.word }}:</h5>
+    <h5>Community vote data for the definition of '{{ keyword.word }}':</h5>
     <p>Of our {{ total_users }} community members, <span id="keyword_definition_total_votes">{{ keyword.definition.total_votes }}</span> have voted on this subject, a participation percentage of <span id="keyword_definition_participation_percentage">{{ keyword.definition.participation_percentage }}</span>%.</p>
     <div id="definition-pie-chart" style="width: 100%; height: 333px;"></div>
         <table style="display: none;">
@@ -98,10 +98,10 @@
             {{ keyword_error }}
         </div>
     {% endif %}
-<script src="https://d3js.org/d3.v6.min.js"></script>
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         const voteUrl = "{% url 'app01:submit_vote' %}";
     </script>

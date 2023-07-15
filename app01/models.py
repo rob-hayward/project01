@@ -95,11 +95,12 @@ class Votable(models.Model):
         self.total_reject_votes = total_reject_votes
 
         # Change the status if the thresholds are met
-        if self.participation_percentage >= 50:
-            if self.approval_percentage > APPROVE_THRESHOLD:
-                self.status = Status.APPROVED.value
-            elif rejection_percentage > REJECT_THRESHOLD:
-                self.status = Status.REJECTED.value
+        if self.approval_percentage > APPROVE_THRESHOLD:
+            self.status = Status.APPROVED.value
+        elif rejection_percentage > REJECT_THRESHOLD:
+            self.status = Status.REJECTED.value
+        else:
+            self.status = Status.PROPOSED.value
 
         self.save()
 
@@ -152,7 +153,7 @@ class Vote(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if is_new:
-            self.votable.calculate_status()
+            self.votable.get_vote_data()
 
 
 class KeyWord(Votable):

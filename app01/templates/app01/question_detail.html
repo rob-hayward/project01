@@ -16,14 +16,32 @@
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="question-tag-vote-form" method="post">
             {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ question_tag_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ question_tag_obj }}">
+            <input type="hidden" name="votable_content_type" value="{{ question_tag_content_type_id }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_tag_obj_id }}">
             <input type="hidden" id="question_tag_vote" name="vote">
             <button type="button" class="question-tag-vote-btn" id="question_tag_approve" value="1">Approve</button>
             <button type="button" class="question-tag-vote-btn" id="question_tag_reject" value="-1">Reject</button>
             <button type="button" class="question-tag-vote-btn" id="question_tag_no_vote" value="0">No Vote</button>
         </form>
     </div>
+    <div class="question-tag-stats">
+            <h5>Community vote data for question tag '{{ question_tag }}':</h5>
+    <p>Of our {{ total_users }} community members, <span id="question_tag_total_votes">{{ question_tag.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_tag_participation_percentage">{{ question_tag.participation_percentage }}</span>%.</p>
+            <div id="question-tag-pie-chart" style="width: 100%; height: 333px;"></div>
+            <table>
+<!--                style="display: none;"-->
+                <tr>
+                    <th>Approve Votes</th>
+                    <th>Reject Votes</th>
+                    <th>% Approval</th>
+                </tr>
+                <tr>
+                    <td id="question_tag_total_approve_votes">{{ question_tag.total_approve_votes }}</td>
+                    <td id="question_tag_total_reject_votes">{{ question_tag.total_reject_votes }}</td>
+                    <td id="question_tag_approval_percentage">{{ question_tag.approval_percentage }}%</td>
+                </tr>
+            </table>
+        </div>
 
     <div style="display: flex; align-items: baseline;">
         <h2 style="margin-right: 20px;">{{ question_tag }} question:</h2>
@@ -46,8 +64,8 @@
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="question-vote-form" method="post">
             {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ question_text_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ question_text_obj }}">
+            <input type="hidden" name="votable_content_type" value="{{ question_content_type_id }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_obj_id }}">
             <input type="hidden" id="question_vote" name="vote">
             <button type="button" class="question-vote-btn" id="question_approve" value="1">Approve</button>
             <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
@@ -55,7 +73,26 @@
         </form>
     </div>
 
-    <h2>Propose a new Question and Proposal:</h2>
+    <div class="question-stats">
+            <h5>Community vote data for question '{{ question_tag }}':</h5>
+    <p>Of our {{ total_users }} community members, <span id="question_total_votes">{{ question.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_participation_percentage">{{ question.participation_percentage }}</span>%.</p>
+            <div id="question-pie-chart" style="width: 100%; height: 333px;"></div>
+            <table>
+<!--                style="display: none;"-->
+                <tr>
+                    <th>Approve Votes</th>
+                    <th>Reject Votes</th>
+                    <th>% Approval</th>
+                </tr>
+                <tr>
+                    <td id="question_total_approve_votes">{{ question.total_approve_votes }}</td>
+                    <td id="question_total_reject_votes">{{ question.total_reject_votes }}</td>
+                    <td id="question_approval_percentage">{{ question.approval_percentage }}%</td>
+                </tr>
+            </table>
+        </div>
+
+    <h2>Propose a new Question Tag and Question:</h2>
     <form method="post">
         {% csrf_token %}
         {{ question_form|crispy }}
@@ -68,10 +105,11 @@
     {% endif %}
 {% endblock %}
 
-<!--{% block extra_js %}-->
-<!--    <script>-->
-<!--        const voteUrl = "{% url 'app01:submit_vote' %}";-->
-<!--    </script>-->
-<!--    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>-->
-<!--    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>-->
-<!--{% endblock %}-->
+{% block extra_js %}
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+    </script>
+    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>
+    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}

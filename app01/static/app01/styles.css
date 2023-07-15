@@ -209,7 +209,7 @@ span#keyword_user_vote, span#keyword_definition_user_vote, span#question_tag_use
   font-weight: bold;
 }
 
-span#keyword_user_vote.approve, span#keyword_definition_user_vote.approve, , span#question_tag_user_vote.approve, span#question_user_vote.approve {
+span#keyword_user_vote.approve, span#keyword_definition_user_vote.approve, span#question_tag_user_vote.approve, span#question_user_vote.approve {
   color: var(--approved);
 }
 

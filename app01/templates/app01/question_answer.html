@@ -34,10 +34,10 @@
     {% endif %}
 {% endblock %}
 
-<!--{% block extra_js %}-->
-<!--    <script>-->
-<!--        const voteUrl = "{% url 'app01:submit_vote' %}";-->
-<!--    </script>-->
-<!--    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>-->
-<!--    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>-->
-<!--{% endblock %}-->
+{% block extra_js %}
+    <script>
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+    </script>
+    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>
+    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}
