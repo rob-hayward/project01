@@ -12,11 +12,11 @@
     <button type="submit" name="user_profile_form" class="small-circle-button">Update</button>
 </form>
 
-<h3>Change Username</h3>
+<h3>Change User Details</h3>
 <form method="post">
     {% csrf_token %}
-    {{ username_form|crispy }}
-    <button type="submit" name="username_form" class="small-circle-button">Update</button>
+    {{ user_form|crispy }}
+    <button type="submit" name="user_form" class="small-circle-button">Update</button>
 </form>
 
 <h3>Change Password</h3>

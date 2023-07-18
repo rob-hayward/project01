@@ -11,7 +11,16 @@
     </div>
 
     <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question tag '{{ question_tag }}' for this project is:
+            <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
+        <p>You can change your vote anytime using the link below.</p>
+
+    <div style="display: flex; align-items: baseline;">
+        <h2 style="margin-right: 20px;">{{ question_tag }} question:</h2>
         <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+    </div>
+
+    <div>
         <p>
             {% if question.question_text %}
                 {{ question.question_text|highlight_keywords }}
@@ -21,7 +30,13 @@
         </p>
     </div>
 
-    <h2>Propose a new Question and Proposal:</h2>
+    <div>
+        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this '{{ question_tag }}' question is:
+            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
+        <p>You can change your vote anytime using the link below.</p>
+
+
+    <h2>Propose a new Question Tag and Question:</h2>
     <form method="post">
         {% csrf_token %}
         {{ question_form|crispy }}
@@ -35,6 +50,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         const voteUrl = "{% url 'app01:submit_vote' %}";
     </script>

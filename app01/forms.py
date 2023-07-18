@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from .models import UserProfile, Vote, VoteType, KeyWord, KeyWordDefinition, Question, AnswerType, QuestionTag
+from .models import UserProfile, Vote, VoteType, KeyWord, KeyWordDefinition, Question, AnswerType, QuestionTag, AnswerBinary
 from django_countries.fields import CountryField
 from django_countries.widgets import CountrySelectWidget
 from django.contrib.contenttypes.models import ContentType
@@ -62,24 +62,24 @@ class QuestionForm(forms.ModelForm):
         model = Question
         fields = ['keywords', 'question_text', 'answer_type']
 
-    def save(self, commit=True):
+    def save(self, commit=True, creator=None):
         keywords = self.cleaned_data.get('keywords')
         question_text = self.cleaned_data.get('question_text')
         answer_type = self.cleaned_data.get('answer_type')
 
-        # Use atomic transaction to ensure all db operations are successful
         with transaction.atomic():
-            # Create QuestionTag instance first
-            question_tag = QuestionTag.objects.create()
+            question_tag = QuestionTag.objects.create(creator=creator)  # set the creator here
             question_tag.keywords.set(keywords)
             question_tag.save()
 
-            # Then, create Question instance and assign the created QuestionTag to the Question
             question = super(QuestionForm, self).save(commit=False)
             question.question_tag = question_tag
+            question.creator = creator  # set the creator here
 
             if commit:
                 question.save()
+                if question.answer_type == AnswerType.BINARY.name:
+                    AnswerBinary.objects.create(question_tag=question_tag, creator=creator)  # create AnswerBinary
 
         return question
 
@@ -87,7 +87,7 @@ class QuestionForm(forms.ModelForm):
 class VoteForm(forms.ModelForm):
     votable_object_id = forms.IntegerField(widget=forms.HiddenInput())
     votable_content_type = forms.ModelChoiceField(
-        queryset=ContentType.objects.filter(model__in=['keyword', 'keyworddefinition', 'questiontag', 'question']),
+        queryset=ContentType.objects.filter(model__in=['keyword', 'keyworddefinition', 'questiontag', 'question', 'answerbinary']),
         widget=forms.HiddenInput()
     )
     vote = forms.ChoiceField(choices=VoteType.choices(), widget=forms.RadioSelect, required=False)
@@ -107,6 +107,25 @@ class VoteForm(forms.ModelForm):
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super(UserRegisterForm, self).__init__(*args, **kwargs)
+        self.fields['username'].label = 'Unique username.'
+
+    def save(self, commit=True):
+        user = super(UserRegisterForm, self).save(commit=False)
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user
+
+
+class UserProfileForm(forms.ModelForm):
+    preferred_name = forms.CharField()
     address = forms.CharField()
     city = forms.CharField()
     post_code = forms.CharField()
@@ -116,44 +135,11 @@ class UserRegisterForm(UserCreationForm):
         }),
     )
     phone_number = forms.CharField()
-    preferred_name = forms.CharField()
 
-    class Meta:
-        model = User
-        fields = ['preferred_name', 'username', 'email', 'password1', 'password2']
-
-    def __init__(self, *args, **kwargs):
-        super(UserRegisterForm, self).__init__(*args, **kwargs)
-        self.fields['username'].label = 'Unique username.'
-        self.fields['preferred_name'].label = 'Please enter your preferred name to be addressed by whilst on this site.'
-
-    def save(self, commit=True):
-        user = super(UserRegisterForm, self).save(commit=False)
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-            userprofile = UserProfile.objects.create(user=user)  # Create UserProfile
-            userprofile.preferred_name = self.cleaned_data['preferred_name']
-            userprofile.address = self.cleaned_data['address']
-            userprofile.city = self.cleaned_data['city']
-            userprofile.post_code = self.cleaned_data['post_code']
-            userprofile.country = self.cleaned_data['country']
-            userprofile.phone_number = self.cleaned_data['phone_number']
-            userprofile.save()
-        return user
-
-
-class LoginForm(AuthenticationForm):
-    pass
-
-
-class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ['preferred_name', 'address', 'city', 'post_code', 'country', 'phone_number']
 
 
-class UsernameForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username']
+class LoginForm(AuthenticationForm):
+    pass

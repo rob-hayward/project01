@@ -1,5 +1,14 @@
 import { updatePieChart } from './binary_pie_chart.js';
 
+function toggleSection(event) {
+    var section = document.getElementById(event.target.dataset.toggleSection);
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
@@ -14,6 +23,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     }
                 }
             });
+        });
+
+        const toggleButtons = document.querySelectorAll('button[data-toggle-section]');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', toggleSection);
         });
 
         function renderInitialPieCharts() {

@@ -3,11 +3,11 @@ from django.db.models import Count
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question, Vote
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, UserChangeForm
+from .models import UserProfile, Status, VoteType, KeyWord, KeyWordDefinition, QuestionTag, Question, Vote, AnswerBinary
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import UserRegisterForm, UserProfileForm, UsernameForm, LoginForm, VoteForm
+from .forms import UserRegisterForm, UserProfileForm, LoginForm, VoteForm
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseNotAllowed
 from django.views.generic import ListView
@@ -55,6 +55,99 @@ def submit_vote(request):
 
 @login_required
 def question_detail(request, question_tag):
+    try:
+        keyword = KeyWord.objects.get(word=question_tag)
+    except KeyWord.DoesNotExist:
+        raise Http404("No Keyword matches the given query.")
+
+    try:
+        question_tag_obj = keyword.questiontag_set.first()
+        if question_tag_obj is None:
+            raise ObjectDoesNotExist
+    except ObjectDoesNotExist:
+        raise Http404("No QuestionTag matches the given query.")
+
+    try:
+        question_obj = Question.objects.get(question_tag=question_tag_obj)
+    except Question.DoesNotExist:
+        raise Http404("No Question matches the given query.")
+
+    try:
+        answer_obj = AnswerBinary.objects.get(question_tag=question_tag_obj)
+    except AnswerBinary.DoesNotExist:
+        raise Http404("No AnswerBinary matches the given query.")
+
+    question_error = None
+    keyword_error = None
+    total_users = UserProfile.objects.filter(is_live=True).count()
+
+    question_content_type = ContentType.objects.get_for_model(question_obj)
+    question_tag_content_type = ContentType.objects.get_for_model(question_tag_obj)
+    answer_content_type = ContentType.objects.get_for_model(answer_obj)
+
+    if request.method == 'POST' and 'question_submit' in request.POST:
+        question_form = QuestionForm(request.POST)
+        if question_form.is_valid():
+            try:
+                new_question = question_form.save(commit=False)
+                new_question.creator = request.user
+                new_question.parent = question_obj
+                new_question.save()
+                return redirect(new_question.get_absolute_url())
+            except forms.ValidationError as e:
+                question_error = str(e)
+
+    else:
+        question_form = QuestionForm()
+
+    if request.method == 'POST' and 'keyword_submit' in request.POST:
+        keyword_form = KeyWordForm(request.POST)
+        if keyword_form.is_valid():
+            try:
+                new_keyword = keyword_form.save(creator=request.user)
+                return redirect(new_keyword.keyword.get_absolute_url())
+            except forms.ValidationError as e:
+                keyword_error = str(e)
+    else:
+        keyword_form = KeyWordForm()
+
+    question_vote_data = question_obj.get_vote_data()
+    question_user_vote = question_obj.get_user_vote(request.user)
+    question_tag_vote_data = question_tag_obj.get_vote_data()
+    question_tag_user_vote = question_tag_obj.get_user_vote(request.user)
+    answer_vote_data = answer_obj.get_vote_data()
+    answer_user_vote = answer_obj.get_user_vote(request.user)
+
+    context = {
+        'total_users': total_users,
+        'keyword_form': keyword_form,
+        'keyword_error': keyword_error,
+        'question_form': question_form,
+        'question_error': question_error,
+        'question': question_obj,
+        'question_text': question_obj.question_text,
+        'question_obj_id': question_obj.id,
+        'question_content_type_id': question_content_type.id,
+        'question_user_vote': question_user_vote,
+        'question_tag': question_tag_obj,
+        'question_tag_obj_id': question_tag_obj.id,
+        'question_tag_content_type_id': question_tag_content_type.id,
+        'question_tag_user_vote': question_tag_user_vote,
+        'answer': answer_obj,
+        'answer_obj_id': answer_obj.id,
+        'answer_content_type_id': answer_content_type.id,
+        'answer_user_vote': answer_user_vote,
+
+    }
+    context.update(question_vote_data)
+    context.update(question_tag_vote_data)
+    context.update(answer_vote_data)
+
+    return render(request, 'app01/question_detail.html', context)
+
+
+@login_required
+def answer_binary(request, question_tag):
     try:
         keyword = KeyWord.objects.get(word=question_tag)
         question_tag_obj = keyword.questiontag_set.first()
@@ -105,7 +198,7 @@ def question_detail(request, question_tag):
     context.update(question_vote_data)
     context.update(question_tag_vote_data)
 
-    return render(request, 'app01/question_detail.html', context)
+    return render(request, 'app01/answer_binary.html', context)
 
 
 @login_required
@@ -122,7 +215,7 @@ def keyword_detail(request, keyword):
         keyword_form = KeyWordForm(request.POST)
         if keyword_form.is_valid():
             try:
-                new_keyword = keyword_form.save(creator=request.user, parent=keyword_obj)
+                new_keyword = keyword_form.save(creator=request.user)
                 return redirect(new_keyword.keyword.get_absolute_url())
             except forms.ValidationError as e:
                 keyword_error = str(e)
@@ -238,15 +331,20 @@ def create_proposals(request):
 
 def register(request):
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
+        user_form = UserRegisterForm(request.POST)
+        profile_form = UserProfileForm(request.POST)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            profile.save()
             login(request, user)
             messages.success(request, f'Welcome {user.username}, your account has been created!')
             return redirect('app01:home')
     else:
-        form = UserRegisterForm()
-    return render(request, 'app01/register.html', {'form': form})  # Updated template path
+        user_form = UserRegisterForm()
+        profile_form = UserProfileForm()
+    return render(request, 'app01/register.html', {'user_form': user_form, 'profile_form': profile_form})
 
 
 def login_view(request):
@@ -281,11 +379,11 @@ def account(request):
                 form.save()
                 messages.success(request, 'Your account details have been updated!')
 
-        elif 'username_form' in request.POST:
-            form = UsernameForm(request.POST, instance=request.user)
+        elif 'user_form' in request.POST:
+            form = UserChangeForm(request.POST, instance=request.user)
             if form.is_valid():
                 form.save()
-                messages.success(request, 'Your username has been updated!')
+                messages.success(request, 'Your user details have been updated!')
 
         elif 'password_change_form' in request.POST:
             form = PasswordChangeForm(request.user, request.POST)
@@ -298,14 +396,15 @@ def account(request):
 
     # Initialize forms
     user_profile_form = UserProfileForm(instance=request.user.userprofile)
-    username_form = UsernameForm(instance=request.user)
+    user_form = UserChangeForm(instance=request.user)
     password_change_form = PasswordChangeForm(request.user)
 
     return render(request, 'app01/account.html', {
         'user_profile_form': user_profile_form,
-        'username_form': username_form,
+        'user_form': user_form,
         'password_change_form': password_change_form
     })
+
 
 
 

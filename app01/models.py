@@ -203,66 +203,50 @@ class Question(Votable):
         return path[::-1]  # reversed so that it starts from root
 
 
-class AnswerBinary(models.Model):
-    ANSWER_CHOICES = [
-        (0, 'No answer'),
-        (-1, 'No'),
-        (1, 'Yes'),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    answer = models.IntegerField(choices=ANSWER_CHOICES)
+class AnswerBinary(Votable):
+    question_tag = models.OneToOneField(QuestionTag, on_delete=models.CASCADE, related_name="question_tag")
 
 
-class AnswerBinaryData(models.Model):
-    question = models.OneToOneField(Question, on_delete=models.CASCADE, primary_key=True)
-    total_positive = models.IntegerField(default=0)
-    total_negative = models.IntegerField(default=0)
-    positive_percentage = models.FloatField(default=0)
-    negative_percentage = models.FloatField(default=0)
-
-
-class AnswerInteger(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    answer = models.IntegerField(null=True, blank=True)
-
-    @classmethod
-    def get_data(cls, question):
-        answers = cls.objects.filter(question=question)
-
-        # Calculate statistics using Django's aggregation functions
-        return answers.aggregate(
-            mean=Avg('answer'),
-            count=Count('answer'),
-            std_dev=StdDev('answer'),
-        )
-
-
-class AnswerDecimal(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    answer = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-
-    @classmethod
-    def get_data(cls, question):
-        answers = cls.objects.filter(question=question)
-
-        # Calculate statistics using Django's aggregation functions
-        return answers.aggregate(
-            mean=Avg('answer'),
-            count=Count('answer'),
-            std_dev=StdDev('answer'),
-        )
-
-
-class DesignBrief:
-    pass
-
-
-class Design:
-    pass
+# class AnswerInteger(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     question = models.ForeignKey(Question, on_delete=models.CASCADE)
+#     answer = models.IntegerField(null=True, blank=True)
+#
+#     @classmethod
+#     def get_data(cls, question):
+#         answers = cls.objects.filter(question=question)
+#
+#         # Calculate statistics using Django's aggregation functions
+#         return answers.aggregate(
+#             mean=Avg('answer'),
+#             count=Count('answer'),
+#             std_dev=StdDev('answer'),
+#         )
+#
+#
+# class AnswerDecimal(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     question = models.ForeignKey(Question, on_delete=models.CASCADE)
+#     answer = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+#
+#     @classmethod
+#     def get_data(cls, question):
+#         answers = cls.objects.filter(question=question)
+#
+#         # Calculate statistics using Django's aggregation functions
+#         return answers.aggregate(
+#             mean=Avg('answer'),
+#             count=Count('answer'),
+#             std_dev=StdDev('answer'),
+#         )
+#
+#
+# class DesignBrief:
+#     pass
+#
+#
+# class Design:
+#     pass
 
 
 class UserProfile(models.Model):
@@ -300,11 +284,9 @@ def update_last_visit(sender, user, request, **kwargs):
 user_logged_in.connect(update_last_visit)
 
 
-# Signal to create or update user profile when user is created or updated
+# Signal to update user profile when user is updated
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance, preferred_name='', address='', city='', post_code='', country='',
-                                   phone_number='')
-    else:
+    if not created:
         instance.userprofile.save()
+

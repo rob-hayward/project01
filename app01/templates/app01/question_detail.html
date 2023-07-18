@@ -5,58 +5,21 @@
 
 {% block content %}
 
-    <div style="display: flex; align-items: baseline;">
-        <h1 style="margin-right: 20px;">{{ question_tag }}</h1>
-        <p>Current question tag status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
-    </div>
+<div style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">Question:</h4>
 
-    <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question tag '{{ question_tag }}' for this project is:
-            <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
-        <p>You can change your vote anytime using the buttons below.</p>
-        <form class="question-tag-vote-form" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ question_tag_content_type_id }}">
-            <input type="hidden" name="votable_object_id" value="{{ question_tag_obj_id }}">
-            <input type="hidden" id="question_tag_vote" name="vote">
-            <button type="button" class="question-tag-vote-btn" id="question_tag_approve" value="1">Approve</button>
-            <button type="button" class="question-tag-vote-btn" id="question_tag_reject" value="-1">Reject</button>
-            <button type="button" class="question-tag-vote-btn" id="question_tag_no_vote" value="0">No Vote</button>
-        </form>
-    </div>
-    <div class="question-tag-stats">
-            <h5>Community vote data for question tag '{{ question_tag }}':</h5>
-    <p>Of our {{ total_users }} community members, <span id="question_tag_total_votes">{{ question_tag.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_tag_participation_percentage">{{ question_tag.participation_percentage }}</span>%.</p>
-            <div id="question-tag-pie-chart" style="width: 100%; height: 333px;"></div>
-            <table style="display: none;">
-                <tr>
-                    <th>Approve Votes</th>
-                    <th>Reject Votes</th>
-                    <th>% Approval</th>
-                </tr>
-                <tr>
-                    <td id="question_tag_total_approve_votes">{{ question_tag.total_approve_votes }}</td>
-                    <td id="question_tag_total_reject_votes">{{ question_tag.total_reject_votes }}</td>
-                    <td id="question_tag_approval_percentage">{{ question_tag.approval_percentage }}%</td>
-                </tr>
-            </table>
-        </div>
+    <p>Status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+    <button class="expand-btn" data-toggle-section="question_expand">Edit</button>
+</div>
+<p>
+    {% if question.question_text %}
+    {{ question.question_text|highlight_keywords }}
+    {% else %}
+    "No question text available"
+    {% endif %}
+</p>
 
-    <div style="display: flex; align-items: baseline;">
-        <h2 style="margin-right: 20px;">{{ question_tag }} question:</h2>
-        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
-    </div>
-
-    <div>
-        <p>
-            {% if question.question_text %}
-                {{ question.question_text|highlight_keywords }}
-            {% else %}
-                "No question text available"
-            {% endif %}
-        </p>
-    </div>
-
+<div id="question_expand">
     <div>
         <p>{{ user.userprofile.preferred_name }}, your current vote to approve this '{{ question_tag }}' question is:
             <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
@@ -73,41 +36,142 @@
     </div>
 
     <div class="question-stats">
-            <h5>Community vote data for question '{{ question_tag }}':</h5>
-    <p>Of our {{ total_users }} community members, <span id="question_total_votes">{{ question.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_participation_percentage">{{ question.participation_percentage }}</span>%.</p>
-            <div id="question-pie-chart" style="width: 100%; height: 333px;"></div>
-            <table style="display: none;">
-                <tr>
-                    <th>Approve Votes</th>
-                    <th>Reject Votes</th>
-                    <th>% Approval</th>
-                </tr>
-                <tr>
-                    <td id="question_total_approve_votes">{{ question.total_approve_votes }}</td>
-                    <td id="question_total_reject_votes">{{ question.total_reject_votes }}</td>
-                    <td id="question_approval_percentage">{{ question.approval_percentage }}%</td>
-                </tr>
-            </table>
-        </div>
+        <h5>Community vote data for question '{{ question_tag }}':</h5>
+        <p>Of our {{ total_users }} community members, <span id="question_total_votes">{{ question.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_participation_percentage">{{ question.participation_percentage }}</span>%.</p>
+        <div id="question-pie-chart" style="width: 100%; height: 333px;"></div>
+        <table style="display: none;">
+            <tr>
+                <th>Approve Votes</th>
+                <th>Reject Votes</th>
+                <th>% Approval</th>
+            </tr>
+            <tr>
+                <td id="question_total_approve_votes">{{ question.total_approve_votes }}</td>
+                <td id="question_total_reject_votes">{{ question.total_reject_votes }}</td>
+                <td id="question_approval_percentage">{{ question.approval_percentage }}%</td>
+            </tr>
+        </table>
+    </div>
+</div>
 
-    <h2>Propose a new Question Tag and Question:</h2>
+<div>
+    <h4 style="margin-right: 20px;">Answer:</h4>
+    <form class="answer-vote-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="votable_content_type" value="{{ answer_content_type_id }}">
+        <input type="hidden" name="votable_object_id" value="{{ answer_obj_id }}">
+        <input type="hidden" id="answer_vote" name="vote">
+        <button type="button" class="answer-vote-btn" id="answer_approve" value="1">Yes</button>
+        <button type="button" class="answer-vote-btn" id="answer_reject" value="-1">No</button>
+        <button type="button" class="answer-vote-btn" id="answer_no_vote" value="0">Pass</button>
+    </form>
+</div>
+
+<h4 style="margin-right: 20px;">Community Answer data for this Question:</h4>
+<div class="answer-stats" style="display: flex; align-items: baseline;">
+    <p>{{ user.userprofile.preferred_name }}, your current answer to this question is:
+        <span id="answer_user_vote" class="{{ answer_user_vote|lower }}">{{ answer_user_vote }}</span><br>
+        Of our {{ total_users }} community members, <span id="answer_total_votes">{{ answer.total_votes }}</span> have voted on this subject, a participation percentage of <span id="answer_participation_percentage">{{ answer.participation_percentage }}</span>%.</p>
+    <div id="answer-pie-chart" style="width: 100%; height: 333px;"></div>
+    <table style="display: none;">
+        <tr>
+            <th>Approve Votes</th>
+            <th>Reject Votes</th>
+            <th>% Approval</th>
+        </tr>
+        <tr>
+            <td id="answer_total_approve_votes">{{ answer.total_approve_votes }}</td>
+            <td id="answer_total_reject_votes">{{ answer.total_reject_votes }}</td>
+            <td id="answer_approval_percentage">{{ answer.approval_percentage }}%</td>
+        </tr>
+    </table>
+</div>
+
+<div style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">Question Tag:</h4>
+    <h4>{{ question_tag }}</h4><br>
+    <p>Status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
+    <button class="expand-btn" data-toggle-section="question_tag_expand">Vote</button>
+</div>
+
+<div  id="question_tag_expand">
+    <div>
+        <p>{{ user.userprofile.preferred_name }}'s vote to approve or reject Question Tag:'{{ question_tag }}' for this project is:
+            <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
+        <p>You can change your vote anytime using the buttons below.</p>
+        <form class="question-tag-vote-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="votable_content_type" value="{{ question_tag_content_type_id }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_tag_obj_id }}">
+            <input type="hidden" id="question_tag_vote" name="vote">
+            <button type="button" class="question-tag-vote-btn" id="question_tag_approve" value="1">Approve</button>
+            <button type="button" class="question-tag-vote-btn" id="question_tag_reject" value="-1">Reject</button>
+            <button type="button" class="question-tag-vote-btn" id="question_tag_no_vote" value="0">No Vote</button>
+        </form>
+    </div>
+
+    <div class="question-tag-stats">
+        <h5>Community vote data for question tag '{{ question_tag }}':</h5>
+        <p>Of our {{ total_users }} community members, <span id="question_tag_total_votes">{{ question_tag.total_votes }}</span> have voted on this subject, a participation percentage of <span id="question_tag_participation_percentage">{{ question_tag.participation_percentage }}</span>%.</p>
+        <div id="question-tag-pie-chart" style="width: 100%; height: 333px;"></div>
+        <table style="display: none;">
+            <tr>
+                <th>Approve Votes</th>
+                <th>Reject Votes</th>
+                <th>% Approval</th>
+            </tr>
+            <tr>
+                <td id="question_tag_total_approve_votes">{{ question_tag.total_approve_votes }}</td>
+                <td id="question_tag_total_reject_votes">{{ question_tag.total_reject_votes }}</td>
+                <td id="question_tag_approval_percentage">{{ question_tag.approval_percentage }}%</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="question-propose" style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">Propose a new related Question:</h4>
+    <button class="expand-btn" data-toggle-section="question_propose_expand">Propose</button>
+</div>
+<div id="question_propose_expand">
     <form method="post">
         {% csrf_token %}
         {{ question_form|crispy }}
         <input type="submit" class="propose-btn" name="question_submit" value="Propose">
     </form>
-    {% if question_error %}
-        <div class="alert alert-danger" role="alert">
-            {{ question_error }}
-        </div>
-    {% endif %}
+</div>
+{% if question_error %}
+<div class="alert alert-danger" role="alert">
+    {{ question_error }}
+</div>
+{% endif %}
+
+<div class="keyword-propose" style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">Propose a new Keyword and Definition:</h4>
+    <button class="expand-btn" data-toggle-section="keyword_propose_expand">Propose</button>
+</div>
+
+<div id="keyword_propose_expand">
+    <form method="post">
+        {% csrf_token %}
+        {{ keyword_form|crispy }}
+        <input type="submit" class="propose-btn" name="keyword_submit" value="Propose">
+    </form>
+</div>
+{% if keyword_error %}
+<div class="alert alert-danger" role="alert">
+    {{ keyword_error }}
+</div>
+
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
         const voteUrl = "{% url 'app01:submit_vote' %}";
     </script>
-    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>
-    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+<script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
 {% endblock %}

@@ -1,5 +1,14 @@
 import { updatePieChart } from './binary_pie_chart.js';
 
+function toggleSection(event) {
+    var section = document.getElementById(event.target.dataset.toggleSection);
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
@@ -16,7 +25,26 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         });
 
+        $('#id_keywords').select2({
+            placeholder: 'Select keywords',
+            allowClear: true,
+        }).on('change', function() {
+            var selectedOptions = $('#id_keywords').select2('data');
+            var selectedKeywords = selectedOptions.map(function(option) { return option.text; }).join(', ');
+            $('#question_tag').val(selectedKeywords);
+        });
+
+        const toggleButtons = document.querySelectorAll('button[data-toggle-section]');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', toggleSection);
+        });
+
         function renderInitialPieCharts() {
+            let answer_total_approve_votes = parseInt(document.querySelector('#answer_total_approve_votes').textContent);
+            let answer_total_reject_votes = parseInt(document.querySelector('#answer_total_reject_votes').textContent);
+            let answer_approval_percentage = parseFloat(document.querySelector('#answer_approval_percentage').textContent);
+            updatePieChart(answer_total_approve_votes, answer_total_reject_votes, answer_approval_percentage, 100 - answer_approval_percentage, 'answer-pie-chart');
+
             let question_tag_total_approve_votes = parseInt(document.querySelector('#question_tag_total_approve_votes').textContent);
             let question_tag_total_reject_votes = parseInt(document.querySelector('#question_tag_total_reject_votes').textContent);
             let question_tag_approval_percentage = parseFloat(document.querySelector('#question_tag_approval_percentage').textContent);
@@ -67,6 +95,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                                 updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'question-tag-pie-chart');
                             } else if (buttonsSelector == ".question-vote-btn") {
                                 updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'question-pie-chart');
+                            } else if (buttonsSelector == ".answer-vote-btn") {
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'answer-pie-chart');
                             }
 
                             // Update the status class
@@ -101,6 +131,16 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
 
         renderInitialPieCharts();
+
+        processVote('.answer-vote-btn', 'answer_vote', '.answer-vote-form', {
+            total_votes: '#answer_total_votes',
+            total_approve_votes: '#answer_total_approve_votes',
+            total_reject_votes: '#answer_total_reject_votes',
+            participation_percentage: '#answer_participation_percentage',
+            approval_percentage: '#answer_approval_percentage',
+            status: '#answer_status',
+            user_vote: '#answer_user_vote',
+        });
 
         processVote('.question-tag-vote-btn', 'question_tag_vote', '.question-tag-vote-form', {
             total_votes: '#question_tag_total_votes',
