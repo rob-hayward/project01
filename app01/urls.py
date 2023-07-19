@@ -10,6 +10,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('account/', views.account, name='account'),
     path('create_proposals/', views.create_proposals, name='create_proposals'),
+    path('keyword_dictionary/', views.keyword_dictionary, name='keyword_dictionary'),
     path('keyword_json/', views.keyword_json, name='keyword_json'),
     path('keyword_tree/', views.keyword_tree, name='keyword_tree'),
     path('keyword/<str:keyword>/', views.keyword_detail, name='keyword_detail'),

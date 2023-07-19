@@ -202,6 +202,33 @@ def answer_binary(request, question_tag):
 
 
 @login_required
+def keyword_dictionary(request):
+    keyword_form = None
+    keyword_error = None
+
+    if request.method == 'POST':
+        if 'keyword_submit' in request.POST:
+            keyword_form = KeyWordForm(request.POST)
+            if keyword_form.is_valid():
+                try:
+                    keyword_form.save(creator=request.user)
+                except forms.ValidationError as e:
+                    keyword_error = str(e)
+    else:
+        keyword_form = KeyWordForm()
+
+    keywords = KeyWord.objects.all().order_by('word')
+
+    context = {
+        'keywords': keywords,
+        'keyword_form': keyword_form,
+        'keyword_error': keyword_error,
+    }
+
+    return render(request, 'app01/keyword_dictionary.html', context)
+
+
+@login_required
 def keyword_detail(request, keyword):
     keyword_obj = get_object_or_404(KeyWord, word=keyword)
     keyword_definition_obj = keyword_obj.definition

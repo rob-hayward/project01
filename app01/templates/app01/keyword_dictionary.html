@@ -1,0 +1,46 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+
+<h1>Keyword Dictionary</h1>
+<p>Click on any Keyword to view more details, vote on status and propose changes.</p>
+    <div class="container">
+        {% for keyword in keywords %}
+        <div style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">{{ keyword.word|highlight_keywords }}</h4>
+    <p>Status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
+            </div>
+        <p>{{ keyword.definition.definition|highlight_keywords }}</p>
+        {% empty %}
+            <p>No keywords available.</p>
+        {% endfor %}
+    </div>
+
+<div class="keyword-propose" style="display: flex; align-items: baseline;">
+    <h4 style="margin-right: 20px;">Propose a new Keyword and Definition:</h4>
+    <button class="expand-btn" data-toggle-section="keyword_propose_expand">Propose</button>
+</div>
+
+<div id="keyword_propose_expand">
+    <form method="post">
+        {% csrf_token %}
+        {{ keyword_form|crispy }}
+        <input type="submit" class="propose-btn" name="keyword_submit" value="Propose">
+    </form>
+</div>
+{% if keyword_error %}
+<div class="alert alert-danger" role="alert">
+    {{ keyword_error }}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script type="module" src="{% static 'app01/js/keyword_dictionary.js' %}"></script>
+
+{% endblock %}

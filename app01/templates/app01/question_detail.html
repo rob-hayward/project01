@@ -55,7 +55,6 @@
 </div>
 
 <div>
-    <h4 style="margin-right: 20px;">Answer:</h4>
     <form class="answer-vote-form" method="post">
         {% csrf_token %}
         <input type="hidden" name="votable_content_type" value="{{ answer_content_type_id }}">
