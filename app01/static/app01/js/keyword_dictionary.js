@@ -36,3 +36,4 @@ document.addEventListener('DOMContentLoaded', (event) => {
         toggleButtons.forEach(button => {
             button.addEventListener('click', toggleSection);
         });
+});
