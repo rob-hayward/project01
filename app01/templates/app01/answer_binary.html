@@ -4,56 +4,97 @@
 {% load static %}
 
 {% block content %}
+<h4>Answer Page.</h4>
+<p>This is an answer page. Answer pages display information about how you and the rest of the community have answered a question.<br>
+    Once you have reviewed the answer data you can continue your journey by selecting one of the options at the bottom of the page.<br>
+    </p>
 
-    <div style="display: flex; align-items: baseline;">
-        <h1 style="margin-right: 20px;">{{ question_tag }}</h1>
-        <p>Current question tag status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
-    </div>
-
+<div><h5 style="margin-right: 20px;">Answer Data:</h5>
+{% if answer_user_vote == "Approve" %}
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the question tag '{{ question_tag }}' for this project is:
-            <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
-        <p>You can change your vote anytime using the link below.</p>
-
-    <div style="display: flex; align-items: baseline;">
-        <h2 style="margin-right: 20px;">{{ question_tag }} question:</h2>
-        <p>Current question status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+        {{ user.userprofile.preferred_name }}, thank you for answering the question:<br>
+        "{{ question.question_text|highlight_keywords }}"<br>
+        You answered: <span id="answer_user_vote" class="{{ answer_user_vote|lower }}">{{ answer_user_vote }}</span><br>
+        <span id="answer_total_votes">{{ answer.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="answer_participation_percentage">{{ answer.participation_percentage }}</span>%.<br>
+        Of the {{ answer.total_votes }} community members who have answered this question, {{ answer.approval_percentage }}% agree with you.
     </div>
-
+{% elif answer_user_vote == "Reject" %}
     <div>
-        <p>
-            {% if question.question_text %}
-                {{ question.question_text|highlight_keywords }}
-            {% else %}
-                "No question text available"
-            {% endif %}
-        </p>
+        {{ user.userprofile.preferred_name }}, thank you for answering the question:<br>
+        "{{ question.question_text|highlight_keywords }}"<br>
+        You answered: <span id="answer_user_vote" class="{{ answer_user_vote|lower }}">{{ answer_user_vote }}</span><br>
+        <span id="answer_total_votes">{{ answer.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="answer_participation_percentage">{{ answer.participation_percentage }}</span>%.<br>
+        Of the {{ answer.total_votes }} community members who have answered this question, {{ answer.rejection_percentage }}% agree with you.
     </div>
-
+{% elif answer_user_vote == "No Vote" %}
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this '{{ question_tag }}' question is:
-            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
-        <p>You can change your vote anytime using the link below.</p>
+        {{ user.userprofile.preferred_name }}, you have not answered the question:<br>
+        "{{ question.question_text|highlight_keywords }}"<br>
+        <span id="answer_total_votes">{{ answer.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="answer_participation_percentage">{{ answer.participation_percentage }}</span>%.
+    </div>
+{% endif %}
+    </div>
+<!--<div class="answer-stats" style="display: flex; align-items: flex-start;">-->
+    <div id="answer-pie-chart" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 333px;"></div>
+    <table style="display: none;">
+        <tr>
+            <th>Approve Votes</th>
+            <th>Reject Votes</th>
+            <th>% Approval</th>
+        </tr>
+        <tr>
+            <td id="answer_total_approve_votes">{{ answer.total_approve_votes }}</td>
+            <td id="answer_total_reject_votes">{{ answer.total_reject_votes }}</td>
+            <td id="answer_approval_percentage">{{ answer.approval_percentage }}%</td>
+        </tr>
+    </table>
+
+       <div style="display: flex; align-items: center; justify-content: center;">
+       <p>You can change your answer at anytime or choose another option from the buttons below.</p>
+       </div>
 
 
-    <h2>Propose a new Question Tag and Question:</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ question_form|crispy }}
-        <input type="submit" class="propose-btn" name="question_submit" value="Propose">
-    </form>
-    {% if question_error %}
-        <div class="alert alert-danger" role="alert">
-            {{ question_error }}
-        </div>
-    {% endif %}
+<!--  <div class="question-circle">-->
+<!--      <h4 style="margin-right: 20px;">Choose your path:</h4>-->
+<!--      <p>-->
+<!--        <i class="fa-solid fa-share fa-flip-both" style="color: red;"></i> Change your answer to this question,<br>-->
+<!--        <i class="fa-solid fa-check-to-slot" style="color: orange;"></i> Vote on inclusion of this question content,<br>-->
+<!--        <i class="fa-solid fa-comment-dots" style="color: yellow;"></i> Discuss and edit this question content,<br>-->
+<!--        <i class="fa-solid fa-share" style="color: green;"></i> Go to the next related question,<br>-->
+<!--        <i class="fa-solid fa-edit" style="color: blue"></i> Propose a new related question,<br>-->
+<!--        <i class="fa-solid fa-tree" style="color: indigo"></i> Return to the main question tree.<br>-->
+<!--      </p>-->
+<!--    </div>-->
+
+<div class="button-container">
+<button class="menu-item" id="next_question">
+    next question
+  </button>
+      <button class="menu-item" id="content_vote">
+    vote on content
+  </button>
+<!--  <button class="menu-item" id="discuss_edit">-->
+<!--    discuss & edit-->
+<!--  </button>-->
+
+  <button class="menu-item" id="propose_question">
+    propose question
+  </button>
+    <button class="menu-item" id="change_answer">
+    change answer
+  </button>
+  <button class="menu-item" id="return_to_tree">
+    main tree
+  </button>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
-        const voteUrl = "{% url 'app01:submit_vote' %}";
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+        window.questionTag = "{{ question_tag }}";
     </script>
-    <script type="module" src="{% static 'app01/js/question_detail.js' %}"></script>
-    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+<script type="module" src="{% static 'app01/js/answer_binary.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
 {% endblock %}

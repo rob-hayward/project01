@@ -1,4 +1,17 @@
+import { updatePieChart } from './binary_pie_chart.js';
+
+function toggleSection(event) {
+    var section = document.getElementById(event.target.dataset.toggleSection);
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
+        document.getElementById('change_answer').addEventListener('click', changeAnswer);
+        document.getElementById('return_to_tree').addEventListener('click', returnToTree);
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
                 let word = event.target.getAttribute('data-word');
@@ -14,10 +27,36 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         });
 
+        $('#id_keywords').select2({
+            placeholder: 'Select keywords',
+            allowClear: true,
+        }).on('change', function() {
+            var selectedOptions = $('#id_keywords').select2('data');
+            var selectedKeywords = selectedOptions.map(function(option) { return option.text; }).join(', ');
+            $('#question_tag').val(selectedKeywords);
+        });
+
         const toggleButtons = document.querySelectorAll('button[data-toggle-section]');
         toggleButtons.forEach(button => {
             button.addEventListener('click', toggleSection);
         });
+
+        function renderInitialPieCharts() {
+
+            let question_total_approve_votes = parseInt(document.querySelector('#question_total_approve_votes').textContent);
+            let question_total_reject_votes = parseInt(document.querySelector('#question_total_reject_votes').textContent);
+            let question_approval_percentage = parseFloat(document.querySelector('#question_approval_percentage').textContent);
+            updatePieChart(question_total_approve_votes, question_total_reject_votes, question_approval_percentage, 100 - question_approval_percentage, 'question-pie-chart');
+        }
+
+        function changeAnswer() {
+            let questionTag = window.questionTag;
+            window.location.href = '/content_vote/' + questionTag + '/';
+        }
+
+        function returnToTree() {
+            window.location.href = '/question_tree/';
+        }
 
         function processVote(buttonsSelector, voteInputId, voteFormSelector, voteOutputIds) {
             document.querySelectorAll(buttonsSelector).forEach((element) => {
@@ -54,10 +93,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                             $(voteOutputIds.user_vote).text(json.user_vote);
 
                             // Update the pie charts
-                            if (buttonsSelector == ".keyword-vote-btn") {
-                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'keyword-pie-chart');
-                            } else if (buttonsSelector == ".definition-vote-btn") {
-                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'definition-pie-chart');
+                            if (buttonsSelector == ".question-vote-btn") {
+                                updatePieChart(json.total_approve_votes, json.total_reject_votes, json.approval_percentage, 100 - json.approval_percentage, 'question-pie-chart');
                             }
 
                             // Update the status class
@@ -93,23 +130,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         renderInitialPieCharts();
 
-        processVote('.keyword-vote-btn', 'keyword_vote', '.keyword-vote-form', {
-            total_votes: '#keyword_total_votes',
-            total_approve_votes: '#keyword_total_approve_votes',
-            total_reject_votes: '#keyword_total_reject_votes',
-            participation_percentage: '#keyword_participation_percentage',
-            approval_percentage: '#keyword_approval_percentage',
-            status: '#keyword_status',
-            user_vote: '#keyword_user_vote',
-        });
-
-        processVote('.definition-vote-btn', 'keyword_definition_vote', '.definition-vote-form', {
-            total_votes: '#keyword_definition_total_votes',
-            total_approve_votes: '#keyword_definition_total_approve_votes',
-            total_reject_votes: '#keyword_definition_total_reject_votes',
-            participation_percentage: '#keyword_definition_participation_percentage',
-            approval_percentage: '#keyword_definition_approval_percentage',
-            status: '#keyword_definition_status',
-            user_vote: '#keyword_definition_user_vote',
+        processVote('.question-vote-btn', 'question_vote', '.question-vote-form', {
+            total_votes: '#question_total_votes',
+            total_approve_votes: '#question_total_approve_votes',
+            total_reject_votes: '#question_total_reject_votes',
+            participation_percentage: '#question_participation_percentage',
+            approval_percentage: '#question_approval_percentage',
+            status: '#question_status',
+            user_vote: '#question_user_vote',
         });
     });

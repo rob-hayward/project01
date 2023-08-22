@@ -43,7 +43,7 @@ function createRadialTree(data, containerId, detailUrl) {
     .join("circle")
       .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
       .attr("fill", d => d.children ? "#555" : "#999")
-      .attr("r", 2.5)
+      .attr("r", 10) // modify node size
       .on("click", d => {
         console.log(`Navigating to detail page for: ${d.data.name}`);
         window.location.href = `${detailUrl}${d.data.name}/`;
@@ -53,6 +53,7 @@ function createRadialTree(data, containerId, detailUrl) {
   svg.append("g")
       .attr("stroke-linejoin", "round")
       .attr("stroke-width", 3)
+      .attr("font-size", "20px") // Modify font size
     .selectAll("text")
     .data(root.descendants())
     .join("text")

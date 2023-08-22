@@ -5,7 +5,12 @@
     <title>Dig10cracy</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- GoogleFonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
+    <script src="https://kit.fontawesome.com/65c7099cec.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
@@ -25,7 +30,6 @@
                             <a class="dropdown-item" href="{% url 'app01:home' %}">home</a>
                             <a class="dropdown-item" href="{% url 'app01:create_proposals' %}">create proposals</a>
                             <a class="dropdown-item" href="{% url 'app01:keyword_dictionary' %}">keyword dictionary</a>
-                            <a class="dropdown-item" href="{% url 'app01:keyword_tree' %}">keyword tree</a>
                             <a class="dropdown-item" href="{% url 'app01:question_tree' %}">question tree</a>
                             <a class="dropdown-item" href="{% url 'app01:account' %}">account</a>
                             <a class="dropdown-item" href="{% url 'app01:logout' %}">logout</a>

@@ -16,7 +16,11 @@ urlpatterns = [
     path('keyword/<str:keyword>/', views.keyword_detail, name='keyword_detail'),
     path('question_json/', views.question_json, name='question_json'),
     path('question_tree/', views.question_tree, name='question_tree'),
-    path('question/<str:question_tag>/', views.question_detail, name='question_detail'),
+    path('question/<str:question_tag>/', views.question_binary, name='question_binary'),
+    path('answer_binary/<str:question_tag>/', views.answer_binary, name='answer_binary'),
+    path('content_vote/<str:question_tag>/', views.content_vote, name='content_vote'),
+    path('content_vote_results/<str:question_tag>/', views.content_vote_results, name='content_vote_results'),
+    # path('question/<str:question_tag>/', views.question_detail, name='question_detail'),
     path('submit_vote/', views.submit_vote, name='submit_vote'),
 ]
 

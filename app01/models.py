@@ -86,9 +86,9 @@ class Votable(models.Model):
         total_reject_votes = vote_data['total_reject_votes']
 
         total_users = UserProfile.objects.filter(is_live=True).count()
-        self.participation_percentage = (total_votes / total_users) * 100 if total_users > 0 else 0
-        self.approval_percentage = (total_approve_votes / total_votes) * 100 if total_votes > 0 else 0
-        rejection_percentage = (total_reject_votes / total_votes) * 100 if total_votes > 0 else 0
+        self.participation_percentage = round((total_votes / total_users) * 100) if total_users > 0 else 0
+        self.approval_percentage = round((total_approve_votes / total_votes) * 100) if total_votes > 0 else 0
+        self.rejection_percentage = round((total_reject_votes / total_votes) * 100) if total_votes > 0 else 0
 
         self.total_votes = total_votes
         self.total_approve_votes = total_approve_votes
@@ -97,7 +97,7 @@ class Votable(models.Model):
         # Change the status if the thresholds are met
         if self.approval_percentage > APPROVE_THRESHOLD:
             self.status = Status.APPROVED.value
-        elif rejection_percentage > REJECT_THRESHOLD:
+        elif self.rejection_percentage > REJECT_THRESHOLD:
             self.status = Status.REJECTED.value
         else:
             self.status = Status.PROPOSED.value
@@ -108,7 +108,7 @@ class Votable(models.Model):
             'status': self.status,
             'total_votes': total_votes,
             'approval_percentage': self.approval_percentage,
-            'rejection_percentage': 100 - self.approval_percentage,
+            'rejection_percentage': self.rejection_percentage,
             'participation_percentage': self.participation_percentage,
             'total_approve_votes': total_approve_votes,
             'total_reject_votes': total_reject_votes,

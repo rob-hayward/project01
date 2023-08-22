@@ -4,7 +4,7 @@ function drawPieChart(data, elementId) {
 
   const color = d3.scaleOrdinal()
       .domain(['Approve', 'Reject', 'No Vote'])
-      .range(["#00DFA2", "#FF0060", "#454545"]);
+      .range(["#009646", "#F00000", "#454545"]);
 
   const pie = d3.pie()
       .sort(null)

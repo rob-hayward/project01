@@ -9,13 +9,13 @@
 <p>Click on any Keyword to view more details, vote on status and propose changes.</p>
     <div class="container">
         {% for keyword in keywords %}
-        <div style="display: flex; align-items: baseline;">
-    <h4 style="margin-right: 20px;">{{ keyword.word|highlight_keywords }}</h4>
-    <p>Status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
-            </div>
-        <p>{{ keyword.definition.definition|highlight_keywords }}</p>
+        <div>
+    <h5 style="margin-right: 20px;">{{ keyword.word|highlight_keywords }}:</h5>
+            <h6>{{ keyword.definition.definition|highlight_keywords }}</h6>
         {% empty %}
-            <p>No keywords available.</p>
+            <h6>No keywords available.</h6>
+
+            </div>
         {% endfor %}
     </div>
 

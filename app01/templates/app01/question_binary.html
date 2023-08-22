@@ -1,0 +1,54 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+<h4>Question Page.</h4>
+<p>This is a question page. Question pages display questions written by our community.<br>
+    Please answer as many questions as you want to. The more questions you answer, the more your individual thoughts and feelings on the topics discussed will be represented within the community.<br>
+    Once you have answered a question, you will be able to see how the rest of the community has answered. You may change your answer whenever you like.<br>
+    </p>
+<div class="question-circle">
+    <h5 style="margin-right: 20px;">Question:</h5>
+  <p>
+    {% if question.question_text %}
+    {{ question.question_text|highlight_keywords }}
+    {% else %}
+    "No question text available"
+    {% endif %}
+  </p>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: center;">
+    <form class="answer-vote-form" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="votable_content_type" value="{{ answer_content_type_id }}">
+        <input type="hidden" name="votable_object_id" value="{{ answer_obj_id }}">
+        <input type="hidden" id="answer_vote" name="vote">
+        <button type="button" class="answer-vote-btn" id="answer_approve" value="1">Yes</button>
+        <button type="button" class="answer-vote-btn" id="answer_reject" value="-1">No</button>
+        <button type="button" class="answer-vote-btn" id="answer_no_vote" value="0">Pass</button>
+    </form>
+</div>
+
+<div style="display: none;">
+    <h6 style="margin-right: 20px;">Question Tag:</h6>
+    <h6>{{ question_tag }}</h6>
+</div>
+<div>
+    <h6 style="margin-right: 20px;">{{ user.userprofile.preferred_name }}'s answer: <span id="answer_user_vote" class="{{ answer_user_vote|lower }}">{{ answer_user_vote }}</span></h6>
+    <h6>You may change your answer at any time with the vote buttons above</h6>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+        window.questionTag = "{{ question_tag }}";
+    </script>
+<script type="module" src="{% static 'app01/js/question_binary.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}

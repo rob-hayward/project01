@@ -1,13 +1,28 @@
 :root {
-  --proposed: #0079FF;
-  --rejected: #FF0060;
-  --approved: #00DFA2;
-  --alternative: #F6FA70;
+  --background-light: #FFFFFF;
+  --background-dark: #000000;
+  --red: red;
+  --orange: orange;
+  --yellow: yellow;
+  --green: green;
+  --blue: blue;
+  --indigo: indigo;
+  --violet: violet;
   --no-vote: #454545; /* or any other color for no-vote */
 }
 
+
+body {
+  background-color: --background-light;
+}
+
+body, h1, h2, h3, h4, h5, h6, p {
+  font-family: 'Open Sans', sans-serif;
+}
+
+
 .navbar {
-    background-color: white !important;
+    background-color: var(--background-light) !important;
 }
 
 .navbar-light .navbar-nav .nav-link, .navbar-light .navbar-brand {
@@ -54,7 +69,7 @@
     border: 3px solid black;  /* Adjust as needed */
     border-radius: 50%;  /* This makes it a circle */
     color: black;
-    background-color: white;
+    background-color: background;
     font-size: 1.2em;  /* Adjust as needed */
     line-height: 75px;  /* Adjust as needed */
     text-align: center;
@@ -120,146 +135,251 @@ tr:hover {
 }
 
 
-.keyword-vote-btn, .definition-vote-btn, .propose-btn, .question-tag-vote-btn, .question-vote-btn, .answer-vote-btn, .expand-btn, .digiocracy-btn {
+.keyword-vote-btn, .definition-vote-btn, .propose-btn, .question-tag-vote-btn, .question-vote-btn, .answer-vote-btn, .digiocracy-btn, .question-edit-btn, .menu-item{
   display: inline-block;
-  font-size: 1rem; /* Change as needed */
+  font-size: 1rem;
   text-align: center;
-  color: #ffffff; /* Set the text color to white */
+  color: #ffffff;
   font-weight: bold;
-  width: 5rem; /* Fixed width */
-  height: 5rem; /* Fixed height */
-  line-height: 5rem; /* Vertically align the text */
+  width: 5rem;
+  height: 5rem;
+  line-height: 5rem;
   padding: 0;
   margin: 0.5rem;
-  border-radius: 50%; /* Make the button circular */
+  border-radius: 50%;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  overflow: hidden; /* To ensure longer text doesn't overflow */
+  overflow: hidden;
   outline-color: #ffffff;
   outline: none;
 }
 
 
 div {
-    margin-bottom: 2rem;
+  margin-bottom: 2rem;
 }
 
 .digiocracy-btn {
-  color: black;
-  background-color: white;
+  color: white;
+  background-color: black;
 }
 
 .digiocracy-btn:hover {
-  color: white;
-  background-color: black;
-  text-decoration: none;
-  box-shadow: 0 0 0 2px var(--proposed);
+  color: black;
+  background-color: white;
+  box-shadow: 0 0 0 2px var(--black);
 }
 
-.propose-btn {
-  background-color: var(--proposed);
+#question_status.proposed, .keyword.proposed {
+   color: var(--blue);
 }
 
-.propose-btn:hover {
-  color: var(--proposed);
+#answer_user_vote.approve, #question_user_vote.approve, #question_status.approved, .keyword.approved, #keyword_user_vote.approve {
+   color: var(--green);
+}
+
+#answer_user_vote.reject, #question_user_vote.reject, #question_status.rejected, .keyword.rejected, #keyword_user_vote.reject {
+   color: var(--red);
+}
+
+#change_answer {
+  color: #ffffff;
+  background-color: var(--violet);
+}
+
+#change_answer:hover {
+  color: var(--violet);
   background-color: #ffffff;
-  box-shadow: 0 0 0 2px var(--proposed);
+  box-shadow: 0 0 0 2px var(--violet);
 }
 
-.expand-btn {
-  background-color: var(--alternative);
+#content_vote {
+  color: #ffffff;
+  background-color: var(--yellow);
 }
 
-.expand-btn:hover {
-  color: var(--proposed);
+#content_vote:hover {
+  color: var(--yellow);
   background-color: #ffffff;
-  box-shadow: 0 0 0 2px var(--alternative);
+  box-shadow: 0 0 0 2px var(--yellow);
+}
+
+#discuss_edit {
+  color: #ffffff;
+  background-color: var(--blue);
+}
+
+#discuss_edit:hover {
+  color: var(--blue);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--blue);
+}
+
+#next_question {
+  color: #ffffff;
+  background-color: var(--orange);
+}
+
+#next_question:hover {
+  color: var(--orange);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--orange);
 }
 
 #keyword_approve, #keyword_definition_approve, #question_tag_approve, #question_approve, #answer_approve {
-  background-color: var(--approved);
+  color: #ffffff;
+  background-color: var(--green);
 }
 
-#keyword_approve:hover, #keyword_definition_approve:hover, #question_tag_approve:hover, #question_approve:hover, #answer_approve:hover  {
-  color: var(--approved);
+#keyword_approve:hover, #keyword_definition_approve:hover, #question_tag_approve:hover, #question_approve:hover, #answer_approve:hover {
+  color: var(--green);
   background-color: #ffffff;
-  box-shadow: 0 0 0 2px var(--approved);
+  box-shadow: 0 0 0 2px var(--green);
 }
 
-#keyword_reject, #keyword_definition_reject, #question_tag_reject, #question_reject, #answer_reject {
-  background-color: var(--rejected);
+.propose-btn, #propose_question {
+  color: #ffffff;
+  background-color: var(--indigo);
 }
 
-#keyword_reject:hover, #keyword_definition_reject:hover, #question_tag_reject:hover, #question_reject:hover, #answer_reject:hover {
-  color: var(--rejected);
+.propose-btn:hover, #propose_question:hover {
+  color: var(--indigo);
   background-color: #ffffff;
-  box-shadow: 0 0 0 2px var(--rejected);
+  box-shadow: 0 0 0 2px var(--indigo);
 }
 
-#keyword_no_vote, #keyword_definition_no_vote, #question_tag_no_vote, #question_no_vote, #answer_no_vote {
+#return_to_tree {
+  color: #ffffff;
   background-color: var(--no-vote);
 }
 
-#keyword_no_vote:hover, #keyword_definition_no_vote:hover, #question_tag_no_vote:hover, #question_no_vote:hover, #answer_no_vote:hover {
+#return_to_tree:hover {
   color: var(--no-vote);
   background-color: #ffffff;
   box-shadow: 0 0 0 2px var(--no-vote);
 }
 
-
-span#keyword_status, span#keyword_definition_status, span#question_tag_status, span#question_status {
-  font-weight: bold;
+#keyword_reject, #keyword_definition_reject, #question_tag_reject, #question_reject, #answer_reject {
+  color: #ffffff;
+  background-color: var(--red);
 }
 
-span#keyword_status.proposed, span#keyword_definition_status.proposed, span#question_tag_status.proposed, span#question_status.proposed {
-  color: var(--proposed);
+#keyword_reject:hover, #keyword_definition_reject:hover, #question_tag_reject:hover, #question_reject:hover, #answer_reject:hover {
+  color: var(--red);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--red);
 }
 
-span#keyword_status.approved, span#keyword_definition_status.approved, span#question_tag_status.approved, span#question_status.approved {
-  color: var(--approved);
+#answer_no_vote, #question_no_vote, #question_tag_no_vote, #keyword_no_vote {
+  color: #ffffff;
+  background-color: var(--no-vote);
 }
 
-span#keyword_status.rejected, span#keyword_definition_status.rejected, span#question_tag_status.rejected, span#question_status.rejected {
-  color: var(--rejected);
-}
-
-span#keyword_status.alternative, span#keyword_definition_status.alternative, span#question_tag_status.alternative, span#question_status.alternative {
-  color: var(--alternative);
-}
-
-span#keyword_user_vote, span#keyword_definition_user_vote, span#question_tag_user_vote, span#question_user_vote {
-  font-weight: bold;
-}
-
-span#keyword_user_vote.approve, span#keyword_definition_user_vote.approve, span#question_tag_user_vote.approve, span#question_user_vote.approve {
-  color: var(--approved);
-}
-
-span#keyword_user_vote.reject, span#keyword_definition_user_vote.reject, span#question_tag_user_vote.reject, span#question_user_vote.reject {
-  color: var(--rejected);
-}
-
-span#keyword_user_vote.no-vote, span#keyword_definition_user_vote.no-vote, span#question_tag_user_vote.no-vote, span#question_user_vote.no-vote {
+#answer_no_vote:hover, #question_no_vote:hover, #question_tag_no_vote:hover {
   color: var(--no-vote);
-}
-
-.keyword.proposed {
-  color: var(--proposed);
-}
-
-.keyword.rejected {
-  color: var(--rejected);
-}
-
-.keyword.alternative {
-  color: var(--alternative);
-}
-
-.keyword.approved {
-  color: var(--approved);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--no-vote);
 }
 
 #question_tag_expand, #question_expand, #question_propose_expand, #keyword_expand, #definition_expand, #keyword_propose_expand {
     display: none;
+}
+
+.circle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 40px 0;
+}
+
+.question-circle {
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  border: 10px solid black;
+  background-color: background;
+  margin: 10px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.question-circle {
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  border: 10px solid black;
+  background-color: background;
+  margin: 10px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.rainbow-button {
+  display: inline-block;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 900;
+  width: 5rem;
+  height: 5rem;
+  line-height: 5rem;
+  padding: 0;
+  margin: 0.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  outline: none;
+  position: relative;
+  background-color: #ffffff;
+  color: transparent;
+  background-clip: text;
+  background-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+  -webkit-background-clip: text;
+  z-index: 2;
+}
+
+.rainbow-button:before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.rainbow-button:hover {
+  color: #ffffff;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.rainbow-button:hover:before {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }

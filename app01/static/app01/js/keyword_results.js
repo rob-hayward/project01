@@ -1,3 +1,14 @@
+import { updatePieChart } from './binary_pie_chart.js';
+
+function toggleSection(event) {
+    var section = document.getElementById(event.target.dataset.toggleSection);
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
+
 document.addEventListener('DOMContentLoaded', (event) => {
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
@@ -18,6 +29,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
         toggleButtons.forEach(button => {
             button.addEventListener('click', toggleSection);
         });
+
+        function renderInitialPieCharts() {
+            let keyword_total_approve_votes = parseInt(document.querySelector('#keyword_total_approve_votes').textContent);
+            let keyword_total_reject_votes = parseInt(document.querySelector('#keyword_total_reject_votes').textContent);
+            let keyword_approval_percentage = parseFloat(document.querySelector('#keyword_approval_percentage').textContent);
+            updatePieChart(keyword_total_approve_votes, keyword_total_reject_votes, keyword_approval_percentage, 100 - keyword_approval_percentage, 'keyword-pie-chart');
+
+            let keyword_definition_total_approve_votes = parseInt(document.querySelector('#keyword_definition_total_approve_votes').textContent);
+            let keyword_definition_total_reject_votes = parseInt(document.querySelector('#keyword_definition_total_reject_votes').textContent);
+            let keyword_definition_approval_percentage = parseFloat(document.querySelector('#keyword_definition_approval_percentage').textContent);
+            updatePieChart(keyword_definition_total_approve_votes, keyword_definition_total_reject_votes, keyword_definition_approval_percentage, 100 - keyword_definition_approval_percentage, 'definition-pie-chart');
+        }
 
         function processVote(buttonsSelector, voteInputId, voteFormSelector, voteOutputIds) {
             document.querySelectorAll(buttonsSelector).forEach((element) => {

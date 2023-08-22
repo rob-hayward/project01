@@ -9,7 +9,7 @@
     <h4 style="margin-right: 20px;">Question:</h4>
 
     <p>Status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
-    <button class="expand-btn" data-toggle-section="question_expand">Edit</button>
+    <button class="expand-btn" data-toggle-section="question_expand">Expand</button>
 </div>
 <p>
     {% if question.question_text %}
@@ -21,7 +21,7 @@
 
 <div id="question_expand">
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this '{{ question_tag }}' question is:
+        <p>{{ user.userprofile.preferred_name }}, do you think that this question should be part of Digiocracy? Your current vote for the use of this '{{ question_tag }}' question on Digiocracy is:
             <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="question-vote-form" method="post">
@@ -33,6 +33,7 @@
             <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
             <button type="button" class="question-vote-btn" id="question_no_vote" value="0">No Vote</button>
         </form>
+            <button type="button" class="propose-btn" id="question_edit">Edit</button>
     </div>
 
     <div class="question-stats">
@@ -90,12 +91,12 @@
     <h4 style="margin-right: 20px;">Question Tag:</h4>
     <h4>{{ question_tag }}</h4><br>
     <p>Status: <span id="question_tag_status" class="{{ question_tag.status|lower }}">{{ question_tag.status }}</span></p>
-    <button class="expand-btn" data-toggle-section="question_tag_expand">Vote</button>
+    <button class="expand-btn" data-toggle-section="question_tag_expand">Expand</button>
 </div>
 
 <div  id="question_tag_expand">
     <div>
-        <p>{{ user.userprofile.preferred_name }}'s vote to approve or reject Question Tag:'{{ question_tag }}' for this project is:
+        <p>{{ user.userprofile.preferred_name }}, do you think that this question tag should be used for this question? Your vote to approve or reject Question Tag:'{{ question_tag }}' for this project is:
             <span id="question_tag_user_vote" class="{{ question_tag_user_vote|lower }}">{{ question_tag_user_vote }}</span></p>
         <p>You can change your vote anytime using the buttons below.</p>
         <form class="question-tag-vote-form" method="post">
@@ -107,6 +108,7 @@
             <button type="button" class="question-tag-vote-btn" id="question_tag_reject" value="-1">Reject</button>
             <button type="button" class="question-tag-vote-btn" id="question_tag_no_vote" value="0">No Vote</button>
         </form>
+            <button type="button" class="propose-btn" id="question_tag_edit">Edit</button>
     </div>
 
     <div class="question-tag-stats">
@@ -130,7 +132,7 @@
 
 <div class="question-propose" style="display: flex; align-items: baseline;">
     <h4 style="margin-right: 20px;">Propose a new related Question:</h4>
-    <button class="expand-btn" data-toggle-section="question_propose_expand">Propose</button>
+    <button class="expand-btn" data-toggle-section="question_propose_expand">Expand</button>
 </div>
 <div id="question_propose_expand">
     <form method="post">
@@ -147,7 +149,7 @@
 
 <div class="keyword-propose" style="display: flex; align-items: baseline;">
     <h4 style="margin-right: 20px;">Propose a new Keyword and Definition:</h4>
-    <button class="expand-btn" data-toggle-section="keyword_propose_expand">Propose</button>
+    <button class="expand-btn" data-toggle-section="keyword_propose_expand">Expand</button>
 </div>
 
 <div id="keyword_propose_expand">

@@ -1,8 +1,9 @@
 {% extends 'app01/base.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
+<div class="question-circle">
 <div class="login-form-container">
-<a href="{% url 'app01:home' %}" class="small-circle-button">Digiocracy</a>
+<!--<a href="{% url 'app01:home' %}" class="small-circle-button">Digiocracy</a>-->
   <h2>Login</h2>
   <form method="post">
     {% csrf_token %}
@@ -10,4 +11,6 @@
     <button type="submit" class="small-circle-button">Login</button>
   </form>
 </div>
+</div>
+
 {% endblock %}

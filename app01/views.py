@@ -54,7 +54,169 @@ def submit_vote(request):
 
 
 @login_required
-def question_detail(request, question_tag):
+def question_binary(request, question_tag):
+    try:
+        keyword = KeyWord.objects.get(word=question_tag)
+    except KeyWord.DoesNotExist:
+        raise Http404("No Keyword matches the given query.")
+
+    try:
+        question_tag_obj = keyword.questiontag_set.first()
+        if question_tag_obj is None:
+            raise ObjectDoesNotExist
+    except ObjectDoesNotExist:
+        raise Http404("No QuestionTag matches the given query.")
+
+    try:
+        question_obj = Question.objects.get(question_tag=question_tag_obj)
+    except Question.DoesNotExist:
+        raise Http404("No Question matches the given query.")
+
+    try:
+        answer_obj = AnswerBinary.objects.get(question_tag=question_tag_obj)
+    except AnswerBinary.DoesNotExist:
+        raise Http404("No AnswerBinary matches the given query.")
+
+    answer_content_type = ContentType.objects.get_for_model(answer_obj)
+    answer_user_vote = answer_obj.get_user_vote(request.user)
+
+    context = {
+        'question': question_obj,
+        'question_text': question_obj.question_text,
+        'question_tag': question_tag_obj,
+        'answer': answer_obj,
+        'answer_obj_id': answer_obj.id,
+        'answer_content_type_id': answer_content_type.id,
+        'answer_user_vote': answer_user_vote,
+    }
+
+    return render(request, 'app01/question_binary.html', context)
+
+
+# @login_required
+# def question_detail(request, question_tag):
+#     try:
+#         keyword = KeyWord.objects.get(word=question_tag)
+#     except KeyWord.DoesNotExist:
+#         raise Http404("No Keyword matches the given query.")
+#
+#     try:
+#         question_tag_obj = keyword.questiontag_set.first()
+#         if question_tag_obj is None:
+#             raise ObjectDoesNotExist
+#     except ObjectDoesNotExist:
+#         raise Http404("No QuestionTag matches the given query.")
+#
+#     try:
+#         question_obj = Question.objects.get(question_tag=question_tag_obj)
+#     except Question.DoesNotExist:
+#         raise Http404("No Question matches the given query.")
+#
+#     try:
+#         answer_obj = AnswerBinary.objects.get(question_tag=question_tag_obj)
+#     except AnswerBinary.DoesNotExist:
+#         raise Http404("No AnswerBinary matches the given query.")
+#
+#     question_error = None
+#     keyword_error = None
+#     total_users = UserProfile.objects.filter(is_live=True).count()
+#
+#     question_content_type = ContentType.objects.get_for_model(question_obj)
+#     question_tag_content_type = ContentType.objects.get_for_model(question_tag_obj)
+#     answer_content_type = ContentType.objects.get_for_model(answer_obj)
+#
+#     if request.method == 'POST' and 'question_submit' in request.POST:
+#         question_form = QuestionForm(request.POST)
+#         if question_form.is_valid():
+#             try:
+#                 new_question = question_form.save(commit=False)
+#                 new_question.creator = request.user
+#                 new_question.parent = question_obj
+#                 new_question.save()
+#                 return redirect(new_question.get_absolute_url())
+#             except forms.ValidationError as e:
+#                 question_error = str(e)
+#
+#     else:
+#         question_form = QuestionForm()
+#
+#     if request.method == 'POST' and 'keyword_submit' in request.POST:
+#         keyword_form = KeyWordForm(request.POST)
+#         if keyword_form.is_valid():
+#             try:
+#                 new_keyword = keyword_form.save(creator=request.user)
+#                 return redirect(new_keyword.keyword.get_absolute_url())
+#             except forms.ValidationError as e:
+#                 keyword_error = str(e)
+#     else:
+#         keyword_form = KeyWordForm()
+#
+#     question_vote_data = question_obj.get_vote_data()
+#     question_user_vote = question_obj.get_user_vote(request.user)
+#     question_tag_vote_data = question_tag_obj.get_vote_data()
+#     question_tag_user_vote = question_tag_obj.get_user_vote(request.user)
+#     answer_vote_data = answer_obj.get_vote_data()
+#     answer_user_vote = answer_obj.get_user_vote(request.user)
+#
+#     context = {
+#         'total_users': total_users,
+#         'keyword_form': keyword_form,
+#         'keyword_error': keyword_error,
+#         'question_form': question_form,
+#         'question_error': question_error,
+#         'question': question_obj,
+#         'question_text': question_obj.question_text,
+#         'question_obj_id': question_obj.id,
+#         'question_content_type_id': question_content_type.id,
+#         'question_user_vote': question_user_vote,
+#         'question_tag': question_tag_obj,
+#         'question_tag_obj_id': question_tag_obj.id,
+#         'question_tag_content_type_id': question_tag_content_type.id,
+#         'question_tag_user_vote': question_tag_user_vote,
+#         'answer': answer_obj,
+#         'answer_obj_id': answer_obj.id,
+#         'answer_content_type_id': answer_content_type.id,
+#         'answer_user_vote': answer_user_vote,
+#
+#     }
+#     context.update(question_vote_data)
+#     context.update(question_tag_vote_data)
+#     context.update(answer_vote_data)
+#
+#     return render(request, 'app01/question_detail.html', context)
+
+
+@login_required
+def answer_binary(request, question_tag):
+    keyword = get_object_or_404(KeyWord, word=question_tag)
+    question_tag_obj = get_object_or_404(keyword.questiontag_set.all())
+    question_obj = get_object_or_404(Question, question_tag=question_tag_obj)
+    answer_obj = get_object_or_404(AnswerBinary, question_tag=question_tag_obj)
+
+    total_users = UserProfile.objects.filter(is_live=True).count()
+
+    context = {
+        'total_users': total_users,
+        'question': question_obj,
+        'question_text': question_obj.question_text,
+        'question_obj_id': question_obj.id,
+        'question_content_type_id': ContentType.objects.get_for_model(question_obj).id,
+        'question_user_vote': question_obj.get_user_vote(request.user),
+        'question_tag': question_tag_obj,
+        'question_tag_obj_id': question_tag_obj.id,
+        'question_tag_content_type_id': ContentType.objects.get_for_model(question_tag_obj).id,
+        'question_tag_user_vote': question_tag_obj.get_user_vote(request.user),
+        'answer': answer_obj,
+        'answer_obj_id': answer_obj.id,
+        'answer_content_type_id': ContentType.objects.get_for_model(answer_obj).id,
+        'answer_user_vote': answer_obj.get_user_vote(request.user),
+    }
+    context.update({**question_obj.get_vote_data(), **question_tag_obj.get_vote_data(), **answer_obj.get_vote_data()})
+    return render(request, 'app01/answer_binary.html', context)
+
+
+@login_required
+def content_vote(request, question_tag):
     try:
         keyword = KeyWord.objects.get(word=question_tag)
     except KeyWord.DoesNotExist:
@@ -85,32 +247,6 @@ def question_detail(request, question_tag):
     question_tag_content_type = ContentType.objects.get_for_model(question_tag_obj)
     answer_content_type = ContentType.objects.get_for_model(answer_obj)
 
-    if request.method == 'POST' and 'question_submit' in request.POST:
-        question_form = QuestionForm(request.POST)
-        if question_form.is_valid():
-            try:
-                new_question = question_form.save(commit=False)
-                new_question.creator = request.user
-                new_question.parent = question_obj
-                new_question.save()
-                return redirect(new_question.get_absolute_url())
-            except forms.ValidationError as e:
-                question_error = str(e)
-
-    else:
-        question_form = QuestionForm()
-
-    if request.method == 'POST' and 'keyword_submit' in request.POST:
-        keyword_form = KeyWordForm(request.POST)
-        if keyword_form.is_valid():
-            try:
-                new_keyword = keyword_form.save(creator=request.user)
-                return redirect(new_keyword.keyword.get_absolute_url())
-            except forms.ValidationError as e:
-                keyword_error = str(e)
-    else:
-        keyword_form = KeyWordForm()
-
     question_vote_data = question_obj.get_vote_data()
     question_user_vote = question_obj.get_user_vote(request.user)
     question_tag_vote_data = question_tag_obj.get_vote_data()
@@ -120,9 +256,7 @@ def question_detail(request, question_tag):
 
     context = {
         'total_users': total_users,
-        'keyword_form': keyword_form,
         'keyword_error': keyword_error,
-        'question_form': question_form,
         'question_error': question_error,
         'question': question_obj,
         'question_text': question_obj.question_text,
@@ -143,62 +277,72 @@ def question_detail(request, question_tag):
     context.update(question_tag_vote_data)
     context.update(answer_vote_data)
 
-    return render(request, 'app01/question_detail.html', context)
+    return render(request, 'app01/content_vote.html', context)
 
 
 @login_required
-def answer_binary(request, question_tag):
+def content_vote_results(request, question_tag):
     try:
         keyword = KeyWord.objects.get(word=question_tag)
+    except KeyWord.DoesNotExist:
+        raise Http404("No Keyword matches the given query.")
+
+    try:
         question_tag_obj = keyword.questiontag_set.first()
-        question_obj = Question.objects.get(question_tag=question_tag_obj)
+        if question_tag_obj is None:
+            raise ObjectDoesNotExist
     except ObjectDoesNotExist:
+        raise Http404("No QuestionTag matches the given query.")
+
+    try:
+        question_obj = Question.objects.get(question_tag=question_tag_obj)
+    except Question.DoesNotExist:
         raise Http404("No Question matches the given query.")
 
+    try:
+        answer_obj = AnswerBinary.objects.get(question_tag=question_tag_obj)
+    except AnswerBinary.DoesNotExist:
+        raise Http404("No AnswerBinary matches the given query.")
+
     question_error = None
+    keyword_error = None
     total_users = UserProfile.objects.filter(is_live=True).count()
 
     question_content_type = ContentType.objects.get_for_model(question_obj)
     question_tag_content_type = ContentType.objects.get_for_model(question_tag_obj)
-
-    if request.method == 'POST' and 'question_submit' in request.POST:
-        question_form = QuestionForm(request.POST)
-        if question_form.is_valid():
-            try:
-                new_question = question_form.save(commit=False)
-                new_question.creator = request.user
-                new_question.parent = question_obj
-                new_question.save()
-                return redirect(new_question.get_absolute_url())
-            except forms.ValidationError as e:
-                question_error = str(e)
-
-    else:
-        question_form = QuestionForm()
+    answer_content_type = ContentType.objects.get_for_model(answer_obj)
 
     question_vote_data = question_obj.get_vote_data()
     question_user_vote = question_obj.get_user_vote(request.user)
     question_tag_vote_data = question_tag_obj.get_vote_data()
     question_tag_user_vote = question_tag_obj.get_user_vote(request.user)
+    answer_vote_data = answer_obj.get_vote_data()
+    answer_user_vote = answer_obj.get_user_vote(request.user)
 
     context = {
         'total_users': total_users,
+        'keyword_error': keyword_error,
+        'question_error': question_error,
         'question': question_obj,
         'question_text': question_obj.question_text,
-        'question_tag': question_tag_obj,
-        'question_form': question_form,
-        'question_error': question_error,
-        'question_content_type_id': question_content_type.id,
         'question_obj_id': question_obj.id,
+        'question_content_type_id': question_content_type.id,
         'question_user_vote': question_user_vote,
-        'question_tag_content_type_id': question_tag_content_type.id,
+        'question_tag': question_tag_obj,
         'question_tag_obj_id': question_tag_obj.id,
+        'question_tag_content_type_id': question_tag_content_type.id,
         'question_tag_user_vote': question_tag_user_vote,
+        'answer': answer_obj,
+        'answer_obj_id': answer_obj.id,
+        'answer_content_type_id': answer_content_type.id,
+        'answer_user_vote': answer_user_vote,
+
     }
     context.update(question_vote_data)
     context.update(question_tag_vote_data)
+    context.update(answer_vote_data)
 
-    return render(request, 'app01/answer_binary.html', context)
+    return render(request, 'app01/content_vote_results.html', context)
 
 
 @login_required

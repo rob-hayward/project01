@@ -1,0 +1,61 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+<h4>Content Vote Page.</h4>
+<p>This is a content vote page. All content on this site is written by individuals in our community, like you.<br>
+    The community votes on what content to include on the site and what not to.<br>
+    You can vote to approve or reject the use of any piece of content on the site. The more you vote, the more you influence the content of the site.<br>
+    If you think the content can be improved then you can edit it and create an alternative for the community to vote on.<br>
+    Once you have voted, you will be able to see how the rest of the community has voted. You may change your vote or create edits whenever you like.
+    </p>
+<div class="question-circle">
+    <h5 style="margin-right: 20px;">Content to vote on:</h5>
+    <p>Question tag: {{ question_tag }}<br>
+        Question text:
+    {% if question.question_text %}
+    "{{ question.question_text|highlight_keywords }}"
+    {% else %}
+    "No question text available"
+    {% endif %}
+</p>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: center;">
+<p>{{ user.userprofile.preferred_name }}, do you think that this content should be part of Digiocracy?</p>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: center;">
+<form class="question-vote-form" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="votable_content_type" value="{{ question_content_type_id }}">
+            <input type="hidden" name="votable_object_id" value="{{ question_obj_id }}">
+            <input type="hidden" id="question_vote" name="vote">
+            <button type="button" class="question-vote-btn" id="question_approve" value="1">Approve</button>
+            <button type="button" class="question-vote-btn" id="question_reject" value="-1">Reject</button>
+            <button type="button" class="question-vote-btn" id="question_no_vote" value="0">No Vote</button>
+        </form>
+            <button class="menu-item" id="discuss_edit">Edit</button>
+</div>
+
+<div>
+    <h6>Your current vote for the use of this content on Digiocracy is:
+            <span id="question_user_vote" class="{{ question_user_vote|lower }}">{{ question_user_vote }}</span><br>
+    You can change your vote anytime using the buttons above.</h6>
+</div>
+
+    <p style="display: none;">{{ question_tag }}</p>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+        window.questionTag = "{{ question_tag }}";
+    </script>
+<script type="module" src="{% static 'app01/js/content_vote.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}
