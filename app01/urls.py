@@ -14,6 +14,7 @@ urlpatterns = [
     path('keyword_json/', views.keyword_json, name='keyword_json'),
     path('keyword_tree/', views.keyword_tree, name='keyword_tree'),
     path('keyword/<str:keyword>/', views.keyword_detail, name='keyword_detail'),
+    path('keyword_results/<str:keyword>/', views.keyword_results, name='keyword_results'),
     path('question_json/', views.question_json, name='question_json'),
     path('question_tree/', views.question_tree, name='question_tree'),
     path('question/<str:question_tag>/', views.question_binary, name='question_binary'),

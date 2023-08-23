@@ -47,6 +47,7 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script>
         const voteUrl = "{% url 'app01:submit_vote' %}";
+        window.keyword = "{{ keyword }}";
     </script>
     <script type="module" src="{% static 'app01/js/keyword_detail.js' %}"></script>
     <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>

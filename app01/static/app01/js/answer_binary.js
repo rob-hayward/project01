@@ -28,15 +28,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    $('#id_keywords').select2({
-        placeholder: 'Select keywords',
-        allowClear: true,
-    }).on('change', function() {
-        var selectedOptions = $('#id_keywords').select2('data');
-        var selectedKeywords = selectedOptions.map(function(option) { return option.text; }).join(', ');
-        $('#question_tag').val(selectedKeywords);
-    });
-
     const toggleButtons = document.querySelectorAll('button[data-toggle-section]');
     toggleButtons.forEach(button => {
         button.addEventListener('click', toggleSection);

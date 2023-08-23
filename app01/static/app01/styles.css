@@ -171,15 +171,15 @@ div {
   box-shadow: 0 0 0 2px var(--black);
 }
 
-#question_status.proposed, .keyword.proposed {
+#question_status.proposed, .keyword.proposed, #keyword_status.proposed {
    color: var(--blue);
 }
 
-#answer_user_vote.approve, #question_user_vote.approve, #question_status.approved, .keyword.approved, #keyword_user_vote.approve {
+#answer_user_vote.approve, #question_user_vote.approve, #question_status.approved, .keyword.approved, #keyword_user_vote.approve, #keyword_status.approved {
    color: var(--green);
 }
 
-#answer_user_vote.reject, #question_user_vote.reject, #question_status.rejected, .keyword.rejected, #keyword_user_vote.reject {
+#answer_user_vote.reject, #question_user_vote.reject, #question_status.rejected, .keyword.rejected, #keyword_user_vote.reject, #keyword_status.rejected {
    color: var(--red);
 }
 

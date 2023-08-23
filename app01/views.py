@@ -417,6 +417,51 @@ def keyword_detail(request, keyword):
     return render(request, 'app01/keyword_detail.html', context)
 
 
+@login_required
+def keyword_results(request, keyword):
+    keyword_obj = get_object_or_404(KeyWord, word=keyword)
+    keyword_definition_obj = keyword_obj.definition
+    keyword_error = None
+    total_users = UserProfile.objects.filter(is_live=True).count()
+
+    keyword_votable_type = ContentType.objects.get_for_model(keyword_obj)
+    keyword_definition_votable_type = ContentType.objects.get_for_model(keyword_definition_obj)
+
+    if request.method == 'POST' and 'keyword_submit' in request.POST:
+        keyword_form = KeyWordForm(request.POST)
+        if keyword_form.is_valid():
+            try:
+                new_keyword = keyword_form.save(creator=request.user)
+                return redirect(new_keyword.keyword.get_absolute_url())
+            except forms.ValidationError as e:
+                keyword_error = str(e)
+    else:
+        keyword_form = KeyWordForm()
+
+    keyword_vote_data = keyword_obj.get_vote_data()
+    keyword_user_vote = keyword_obj.get_user_vote(request.user)
+    keyword_definition_vote_data = keyword_definition_obj.get_vote_data()
+    keyword_definition_user_vote = keyword_definition_obj.get_user_vote(request.user)
+
+    context = {
+        'total_users': total_users,
+        'keyword': keyword_obj,
+        'keyword_definition': keyword_definition_obj,
+        'keyword_form': keyword_form,
+        'keyword_error': keyword_error,
+        'keyword_votable_type': keyword_votable_type.id,
+        'keyword_obj': keyword_obj.id,
+        'keyword_user_vote': keyword_user_vote,
+        'keyword_definition_votable_type': keyword_definition_votable_type.id,
+        'keyword_definition_obj': keyword_definition_obj.id,
+        'keyword_definition_user_vote': keyword_definition_user_vote,
+    }
+    context.update(keyword_vote_data)
+    context.update(keyword_definition_vote_data)
+
+    return render(request, 'app01/keyword_results.html', context)
+
+
 def question_json(request):
     try:
         # Get the root question

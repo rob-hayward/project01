@@ -4,30 +4,63 @@
 {% load static %}
 
 {% block content %}
-    <div style="display: flex; align-items: baseline;">
-        <h5 style="margin-right: 20px;">{{ keyword.word }}</h5>
-        <p>Keyword status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
-        <button data-toggle-section="keyword_expand">Vote</button>
-    </div>
-<div  id="keyword_expand">
+<h4>Content Vote Results Page.</h4>
+<p>This is a content vote results page. Content vote results pages display the status of a piece of content and how you and the community have voted.<br>
+    Once you have reviewed the vote data you can continue your journey by selecting one of the options at the bottom of the page.<br>
+    </p>
+
+<h5>Community vote results:</h5>
+    {% if keyword_user_vote == "Approve" %}
     <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve or reject the use of the keyword '{{ keyword.word }}' in this project is:
-            <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span></p>
-        <p>You can change your vote anytime using the buttons below.</p>
-        <form class="keyword-vote-form" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ keyword_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ keyword_obj }}">
-            <input type="hidden" id="keyword_vote" name="vote">
-            <button type="button" class="keyword-vote-btn" id="keyword_approve" value="1">Approve</button>
-            <button type="button" class="keyword-vote-btn" id="keyword_reject" value="-1">Reject</button>
-            <button type="button" class="keyword-vote-btn" id="keyword_no_vote" value="0">No Vote</button>
-        </form>
+        {{ user.userprofile.preferred_name }}, thank you for voting.<br>
+        You voted to <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span> the use of this content:<br>
+        <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
+        Definition:
+         <p>
+            {% if keyword.definition %}
+                {{ keyword.definition.definition|highlight_keywords }}
+            {% else %}
+                "No definition available"
+            {% endif %}
+        </p>
+        <span id="keyword_total_votes">{{ keyword.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.<br>
+        Of the {{ keyword.total_votes }} community members who have voted on this content, {{ keyword.approval_percentage }}% agree with you.
     </div>
-<div class="keyword-stats">
-            <h5>Community vote data for keyword '{{ keyword.word }}':</h5>
-    <p>Of our {{ total_users }} community members, <span id="keyword_total_votes">{{ keyword.total_votes }}</span> have voted on this subject, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.</p>
-            <div id="keyword-pie-chart" style="width: 100%; height: 333px;"></div>
+{% elif keyword_user_vote == "Reject" %}
+    <div>
+        {{ user.userprofile.preferred_name }}, thank you for voting.<br>
+        You voted to <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span> the use of this content:<br>
+        <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
+        Definition:
+         <p>
+            {% if keyword.definition %}
+                {{ keyword.definition.definition|highlight_keywords }}
+            {% else %}
+                "No definition available"
+            {% endif %}
+        </p>
+        <span id="keyword_total_votes">{{ keyword.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.<br>
+        Of the {{ keyword.total_votes }} community members who have voted on this content, {{ keyword.rejection_percentage }}% agree with you.
+    </div>
+{% elif keyword_user_vote == "No Vote" %}
+    <div>
+        {{ user.userprofile.preferred_name }}, you have not voted on this content:<br>
+        <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
+        Definition:
+         <p>
+            {% if keyword.definition %}
+                {{ keyword.definition.definition|highlight_keywords }}
+            {% else %}
+                "No definition available"
+            {% endif %}
+        </p>
+        <span id="keyword_total_votes">{{ keyword.total_votes }}</span> of our {{ total_users }} community members have voted on this content, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.
+    </div>
+{% endif %}
+    <p>Keyword status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
+
+
+        <div id="keyword-pie-chart" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 333px;"></div>
             <table style="display: none;">
                 <tr>
                     <th>Approve Votes</th>
@@ -40,78 +73,41 @@
                     <td id="keyword_approval_percentage">{{ keyword.approval_percentage }}%</td>
                 </tr>
             </table>
-        </div>
-</div>
-    <div style="display: flex; align-items: baseline;">
-        <h2 style="margin-right: 20px;">{{ keyword.word }} definition:</h2>
-        <p>Keyword Definition status: <span id="keyword_definition_status" class="{{ keyword_definition.status|lower }}">{{ keyword.definition.status }}</span></p>
-        <button data-toggle-section="definition_expand">Vote</button>
-    </div>
-    <div>
-        <p>
-            {% if keyword.definition %}
-                {{ keyword.definition.definition|highlight_keywords }}
-            {% else %}
-                "No definition available"
-            {% endif %}
-        </p>
-    </div>
-<div  id="definition_expand">
-    <div>
-        <p>{{ user.userprofile.preferred_name }}, your current vote to approve this definition of the keyword '{{ keyword.word }}'is:
-            <span id="keyword_definition_user_vote" class="{{ keyword_definition_user_vote|lower }}">{{ keyword_definition_user_vote }}</span></p>
-        <p>You can change your vote anytime using the buttons below.</p>
-        <form class="definition-vote-form" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="votable_content_type" value="{{ keyword_definition_votable_type }}">
-            <input type="hidden" name="votable_object_id" value="{{ keyword_definition_obj }}">
-            <input type="hidden" id="keyword_definition_vote" name="vote">
-            <button type="button" class="definition-vote-btn" id="keyword_definition_approve" value="1">Approve</button>
-            <button type="button" class="definition-vote-btn" id="keyword_definition_reject" value="-1">Reject</button>
-            <button type="button" class="definition-vote-btn" id="keyword_definition_no_vote" value="0">No Vote</button>
-        </form>
-    </div>
 
-<div class="keyword-definition-stats">
-    <h5>Community vote data for the definition of '{{ keyword.word }}':</h5>
-    <p>Of our {{ total_users }} community members, <span id="keyword_definition_total_votes">{{ keyword.definition.total_votes }}</span> have voted on this subject, a participation percentage of <span id="keyword_definition_participation_percentage">{{ keyword.definition.participation_percentage }}</span>%.</p>
-    <div id="definition-pie-chart" style="width: 100%; height: 333px;"></div>
-        <table style="display: none;">
-            <tr>
-                <th>Approve Votes</th>
-                <th>Reject Votes</th>
-                <th>% Approval</th>
-            </tr>
-            <tr>
-                <td id="keyword_definition_total_approve_votes">{{ keyword.definition.total_approve_votes }}</td>
-                <td id="keyword_definition_total_reject_votes">{{ keyword.definition.total_reject_votes }}</td>
-                <td id="keyword_definition_approval_percentage">{{ keyword.definition.approval_percentage }}%</td>
-            </tr>
-        </table>
-    </div>
-</div>
-    <h2>Propose a new Keyword and Definition:</h2>
-    <button data-toggle-section="keyword_propose_expand">Propose</button>
-<div id="keyword_propose_expand">
-    <form method="post">
-        {% csrf_token %}
-        {{ keyword_form|crispy }}
-        <input type="submit" class="propose-btn" name="keyword_submit" value="Propose">
-    </form>
-</div>
-    {% if keyword_error %}
-        <div class="alert alert-danger" role="alert">
-            {{ keyword_error }}
-        </div>
+<p style="display: flex; align-items: center; justify-content: center;">You can change your vote anytime using the buttons below.</p>
 
-    {% endif %}
+<div class="button-container">
+<!--<button class="menu-item" id="next_question">-->
+<!--    next question-->
+<!--  </button>-->
+<!--      <button class="menu-item" id="content_vote">-->
+<!--    vote on content-->
+<!--  </button>-->
+  <button class="menu-item" id="discuss_edit">
+    Edit
+  </button>
+
+<!--  <button class="menu-item" id="propose_question">-->
+<!--    propose question-->
+<!--  </button>-->
+    <button class="menu-item" id="change_answer">
+    Change Vote
+  </button>
+  <button class="menu-item" id="return_to_tree">
+    Main Tree
+  </button>
+</div>
+
+
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+        window.keyword = "{{ keyword }}";
         const voteUrl = "{% url 'app01:submit_vote' %}";
     </script>
-    <script type="module" src="{% static 'app01/js/keyword_detail.js' %}"></script>
-    <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+<script type="module" src="{% static 'app01/js/keyword_results.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
 {% endblock %}
+
