@@ -5,6 +5,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const questionUserVote = document.getElementById('question_user_vote');
     const questionTag = window.questionTag;
 
+    document.getElementById('discuss_edit').addEventListener('click', discussEdit);
+
+    function discussEdit() {
+        let questionTag = window.questionTag;
+        window.location.href = '/question_discussion/' + questionTag + '/';
+    }
+
     voteButtons.forEach((button) => {
         button.addEventListener('click', (event) => {
             event.preventDefault();
@@ -32,8 +39,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
                     console.log(json);
 
                     // Update user vote display
-                     questionUserVote.textContent = json.user_vote;
-                     questionUserVote.className = json.user_vote.toLowerCase();
+                    questionUserVote.textContent = json.user_vote;
+                    questionUserVote.className = json.user_vote.toLowerCase();
 
                     // Redirect to content_vote_results page with tailored feedback
                     window.location.href = `/content_vote_results/${questionTag}/?user_vote=${json.user_vote}`;

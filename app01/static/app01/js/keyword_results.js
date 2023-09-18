@@ -11,6 +11,7 @@ function toggleSection(event) {
 
 document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('change_answer').addEventListener('click', changeAnswer);
+    document.getElementById('discuss_edit').addEventListener('click', discussEdit);
     document.getElementById('return_to_tree').addEventListener('click', returnToTree);
 
     document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
@@ -37,7 +38,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
 function changeAnswer() {
     let keyword = window.keyword;
-    window.location.href = '/keyword/' + keyword + '/';
+    window.location.href = '/keyword_detail/' + keyword + '/';
+}
+
+function discussEdit() {
+    let keyword = window.keyword;
+    window.location.href = '/keyword_discussion/' + keyword + '/';
 }
 
 function returnToTree() {

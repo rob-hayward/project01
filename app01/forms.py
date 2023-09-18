@@ -1,47 +1,75 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
-from .models import UserProfile, Vote, VoteType, KeyWord, KeyWordDefinition, Question, AnswerType, QuestionTag, AnswerBinary
+from .models import UserProfile, Vote, VoteType, Keyword, Definition, Question, AnswerType, QuestionTag, AnswerBinary, Comment, Discussion
 from django_countries.fields import CountryField
 from django_countries.widgets import CountrySelectWidget
 from django.contrib.contenttypes.models import ContentType
 from django import forms
 from django_select2 import forms as s2forms
-from .models import KeyWord, QuestionTag, Question, AnswerType
+from .models import Keyword, QuestionTag, Question, AnswerType
 from django.db import transaction
 
 
-class KeyWordForm(forms.ModelForm):
-    word = forms.CharField(max_length=255,
-                           widget=forms.TextInput(attrs={'placeholder': 'Choose any word from the Definition text to propose a new Keyword.'}),
-                           label="Keyword")
-    definition = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Enter your proposed Definition for this new Keyword, within the context of its use here on Digiocracy.'}),
-                                 label="Definition")
+class KeywordForm(forms.ModelForm):
+    word = forms.CharField(
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter a new Keyword.',
+            'autocomplete': 'off'
+        }),
+        label="Keyword"
+    )
+
+    definition_content = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'placeholder': 'Enter your Definition of this new Keyword, within the context of its use here on Digiocracy.'
+        }),
+        label="Definition"
+    )
+
+    comment_content = forms.CharField(
+        widget=forms.Textarea(attrs={'placeholder': 'Start the discussion...'}),
+        label="Initial Comment"
+    )
 
     class Meta:
-        model = KeyWordDefinition
-        fields = ['word', 'definition']
+        model = Keyword
+        fields = ['word', 'definition_content', 'comment_content']
 
     def clean_word(self):
         word = self.cleaned_data.get('word')
-        if KeyWord.objects.filter(word__iexact=word).exists():
+        if Keyword.objects.filter(word__iexact=word).exists():
             raise forms.ValidationError('This keyword already exists.')
         return word
 
-    def save(self, commit=True, creator=None, parent=None):  # Add a parent parameter
-        word = self.cleaned_data.get('word')
-        keyword, created = KeyWord.objects.get_or_create(word=word, defaults={'creator': creator})
-        if not created and keyword.creator != creator:
-            raise forms.ValidationError('This keyword already exists.')
-        keyword_definition = super(KeyWordForm, self).save(commit=False)
-        keyword_definition.keyword = keyword
-        keyword_definition.creator = creator
+    def save(self, commit=True, creator=None):
+        with transaction.atomic():
+            # Create Keyword
+            word = self.cleaned_data.get('word')
+            keyword = Keyword.objects.create(word=word, creator=creator)
 
-        if commit:
-            keyword_definition.save()
-            if parent:  # If a parent keyword is passed, add the new keyword as its child
-                parent.children.add(keyword)
+            # Create Definition
+            definition = Definition.objects.create(
+                keyword=keyword,
+                creator=creator,
+                definition=self.cleaned_data.get('definition_content')
+            )
 
-        return keyword_definition
+            # Create Discussion
+            discussion = Discussion.objects.create(
+                votable_content_type=ContentType.objects.get_for_model(definition),
+                votable_object_id=definition.id,
+                created_by=creator
+            )
+
+            # Create Comment
+            Comment.objects.create(
+                comment=self.cleaned_data.get('comment_content'),
+                creator=creator,
+                discussion=discussion
+            )
+
+        return keyword
 
 
 class QuestionForm(forms.ModelForm):
@@ -54,7 +82,7 @@ class QuestionForm(forms.ModelForm):
         label="Answer Type"
     )
     keywords = forms.ModelMultipleChoiceField(
-        queryset=KeyWord.objects.all(),
+        queryset=Keyword.objects.all(),
         widget=s2forms.Select2MultipleWidget
     )
 

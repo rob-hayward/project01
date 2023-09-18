@@ -1,0 +1,21 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h3>Create Key Word and Definition</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <button type="submit">Submit Key Word</button>
+    </form>
+{% endblock %}
+

@@ -1,0 +1,76 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+<h4>Content Discussion Page.</h4>
+<p>This is a content discussion page. Content discussion pages display the status of a piece of content and how you and the community have voted.<br>
+    Once you have reviewed the vote data you can continue your journey by selecting one of the options at the bottom of the page.<br>
+    </p>
+
+<h5>Community vote results:</h5>
+    <div>
+        <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
+        Definition:
+         <p>
+            {% if keyword.get_live_definition %}
+                {{ keyword.get_live_definition.definition|highlight_keywords }}
+            {% else %}
+                "No definition available"
+            {% endif %}
+        </p>
+        <span id="keyword_total_votes">keyword total votes:{{ keyword.total_votes }}</span> <br>
+        <span id="keyword_participation_percentage">keyword participation percentage{{ keyword.participation_percentage }}</span>%.<br>
+        keyword approval percentage {{ keyword.approval_percentage }}%
+    </div>
+    <p>Keyword status: <span id="keyword_status" class="{{ keyword.status|lower }}">{{ keyword.status }}</span></p>
+
+        <div id="keyword-pie-chart" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 333px;"></div>
+            <table style="display: none;">
+                <tr>
+                    <th>Approve Votes</th>
+                    <th>Reject Votes</th>
+                    <th>% Approval</th>
+                </tr>
+                <tr>
+                    <td id="keyword_total_approve_votes">{{ keyword.total_approve_votes }}</td>
+                    <td id="keyword_total_reject_votes">{{ keyword.total_reject_votes }}</td>
+                    <td id="keyword_approval_percentage">{{ keyword.approval_percentage }}%</td>
+                </tr>
+            </table>
+
+<p style="display: flex; align-items: center; justify-content: center;">You can change your vote anytime using the buttons below.</p>
+
+<div class="button-container">
+<!--<button class="menu-item" id="next_question">-->
+<!--    next question-->
+<!--  </button>-->
+<!--      <button class="menu-item" id="content_vote">-->
+<!--    vote on content-->
+<!--  </button>-->
+  <button class="menu-item" id="discuss_edit">Edit/Discuss</button>
+
+<!--  <button class="menu-item" id="propose_question">-->
+<!--    propose question-->
+<!--  </button>-->
+    <button class="menu-item" id="change_answer">
+    Change Vote
+  </button>
+  <button class="menu-item" id="return_to_tree">
+    Main Tree
+  </button>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+        window.keyword = "{{ keyword }}";
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+    </script>
+<script type="module" src="{% static 'app01/js/keyword_results.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}

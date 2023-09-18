@@ -14,8 +14,8 @@
         <h5 style="margin-right: 20px;">Keyword: {{ keyword.word }}</h5>
         Definition:
          <p>
-            {% if keyword.definition %}
-                {{ keyword.definition.definition|highlight_keywords }}
+           {% if keyword.get_live_definition %}
+                {{ keyword.get_live_definition.definition|highlight_keywords }}
             {% else %}
                 "No definition available"
             {% endif %}
@@ -32,7 +32,7 @@
             <button type="button" class="keyword-vote-btn" id="keyword_reject" value="-1">Reject</button>
             <button type="button" class="keyword-vote-btn" id="keyword_no_vote" value="0">No Vote</button>
         </form>
-        <button class="menu-item" id="discuss_edit">Edit</button>
+        <button class="menu-item" id="discuss_edit">Edit/Discuss</button>
         </div>
 <div>
         <p>{{ user.userprofile.preferred_name }}, your current votes is: <span id="keyword_user_vote" class="{{ keyword_user_vote|lower }}">{{ keyword_user_vote }}</span></p>
@@ -52,3 +52,4 @@
     <script type="module" src="{% static 'app01/js/keyword_detail.js' %}"></script>
     <script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
 {% endblock %}
+

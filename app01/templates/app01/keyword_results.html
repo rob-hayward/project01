@@ -17,8 +17,8 @@
         <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
         Definition:
          <p>
-            {% if keyword.definition %}
-                {{ keyword.definition.definition|highlight_keywords }}
+            {% if keyword.get_live_definition %}
+                {{ keyword.get_live_definition.definition|highlight_keywords }}
             {% else %}
                 "No definition available"
             {% endif %}
@@ -33,11 +33,12 @@
         <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
         Definition:
          <p>
-            {% if keyword.definition %}
-                {{ keyword.definition.definition|highlight_keywords }}
+            {% if keyword.get_live_definition %}
+                {{ keyword.get_live_definition.definition|highlight_keywords }}
             {% else %}
                 "No definition available"
             {% endif %}
+
         </p>
         <span id="keyword_total_votes">{{ keyword.total_votes }}</span> of our {{ total_users }} community members have voted on this subject, a participation percentage of <span id="keyword_participation_percentage">{{ keyword.participation_percentage }}</span>%.<br>
         Of the {{ keyword.total_votes }} community members who have voted on this content, {{ keyword.rejection_percentage }}% agree with you.
@@ -48,8 +49,8 @@
         <p style="margin-right: 20px;">Keyword: {{ keyword.word }}</p>
         Definition:
          <p>
-            {% if keyword.definition %}
-                {{ keyword.definition.definition|highlight_keywords }}
+            {% if keyword.get_live_definition %}
+                {{ keyword.get_live_definition.definition|highlight_keywords }}
             {% else %}
                 "No definition available"
             {% endif %}
@@ -83,9 +84,7 @@
 <!--      <button class="menu-item" id="content_vote">-->
 <!--    vote on content-->
 <!--  </button>-->
-  <button class="menu-item" id="discuss_edit">
-    Edit
-  </button>
+  <button class="menu-item" id="discuss_edit">Edit/Discuss</button>
 
 <!--  <button class="menu-item" id="propose_question">-->
 <!--    propose question-->

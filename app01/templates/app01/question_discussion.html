@@ -1,0 +1,88 @@
+{% extends "app01/base.html" %}
+{% load crispy_forms_tags %}
+{% load highlight_keywords %}
+{% load static %}
+
+{% block content %}
+
+<h4>Question Discussion Page.</h4>
+<p>This is a question discussion page. This page displays the current version of a topic along with alternative edits created the community.<br>
+   The quality of content on the site can be improved through community discussion and voting on these alternative versions.<br>
+    If an alternative version gains more popularity than a current version then the current version will be replaced.
+</p>
+
+<div style="display: flex; align-items: top;">
+    <div>
+    <h4 style="margin-right: 20px;">Current Version:</h4>
+    <p style="margin-right: 20px;">Question tag: {{ question_tag }}</p>
+    <p style="margin-right: 20px;">Question text:</p>
+    <p>
+    {% if question.question_text %}
+    {{ question.question_text|highlight_keywords }}
+    {% else %}
+    "No question text available"
+    {% endif %}
+</p>
+        </div>
+
+    <p>Status: <span id="question_status" class="{{ question.status|lower }}">{{ question.status }}</span></p>
+<div id="question-pie-chart" style="width: 100%; height: 333px;"></div>
+
+
+</div>
+
+
+
+
+    <div class="question-stats">
+
+        <table style="display: none;">
+            <tr>
+                <th>Approve Votes</th>
+                <th>Reject Votes</th>
+                <th>% Approval</th>
+            </tr>
+            <tr>
+                <td id="question_total_approve_votes">{{ question.total_approve_votes }}</td>
+                <td id="question_total_reject_votes">{{ question.total_reject_votes }}</td>
+                <td id="question_approval_percentage">{{ question.approval_percentage }}%</td>
+            </tr>
+        </table>
+    </div>
+
+<!-- ... your existing code ... -->
+
+<h4>Discussion on Current Version:</h4>
+<p style="margin-right: 20px;">Creator notes:</p>
+        {{ question.creator_notes|highlight_keywords }}
+<div id="discussion-section">
+    {% for comment in comments %}
+        <div class="comment">
+            <strong>{{ comment.creator.username }}:</strong> {{ comment.content }}
+            <button class="upvote">Upvote ({{ comment.upvotes }})</button>
+            <button class="downvote">Downvote ({{ comment.downvotes }})</button>
+        </div>
+    {% endfor %}
+</div>
+
+<h4>Leave a Comment:</h4>
+<form method="post" action="{% url 'app01:add_comment' %}">
+    {% csrf_token %}
+    <textarea name="content" required placeholder="Add your comment here..."></textarea>
+    <input type="hidden" name="question_tag" value="{{ question_tag.id }}">
+    <button type="submit">Submit Comment</button>
+</form>
+
+<!-- ... your existing code ... -->
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script>
+        const voteUrl = "{% url 'app01:submit_vote' %}";
+    </script>
+<script type="module" src="{% static 'app01/js/question_discussion.js' %}"></script>
+<script type="module" src="{% static 'app01/js/binary_pie_chart.js' %}"></script>
+{% endblock %}

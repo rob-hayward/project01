@@ -10,9 +10,6 @@ function toggleSection(event) {
 }
 
 document.addEventListener('DOMContentLoaded', (event) => {
-        document.getElementById('change_answer').addEventListener('click', changeAnswer);
-        document.getElementById('return_to_tree').addEventListener('click', returnToTree);
-        document.getElementById('discuss_edit').addEventListener('click', discussEdit);
         document.querySelectorAll('a[data-word], span[data-word]').forEach((element) => {
             element.addEventListener('click', (event) => {
                 let word = event.target.getAttribute('data-word');
@@ -48,20 +45,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
             let question_total_reject_votes = parseInt(document.querySelector('#question_total_reject_votes').textContent);
             let question_approval_percentage = parseFloat(document.querySelector('#question_approval_percentage').textContent);
             updatePieChart(question_total_approve_votes, question_total_reject_votes, question_approval_percentage, 100 - question_approval_percentage, 'question-pie-chart');
-        }
-
-        function changeAnswer() {
-            let questionTag = window.questionTag;
-            window.location.href = '/content_vote/' + questionTag + '/';
-        }
-
-        function discussEdit() {
-                    let questionTag = window.questionTag;
-                    window.location.href = '/question_discussion/' + questionTag + '/';
-                }
-
-        function returnToTree() {
-            window.location.href = '/question_tree/';
         }
 
         function processVote(buttonsSelector, voteInputId, voteFormSelector, voteOutputIds) {

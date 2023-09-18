@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -13,7 +13,6 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django_countries.fields import CountryField
 from django.db.models import Avg, Count, StdDev
-from django.contrib.contenttypes.models import ContentType
 
 
 USER_INACTIVE_PERIOD = 365  # number of days
@@ -62,6 +61,7 @@ class Votable(models.Model):
     total_votes = models.PositiveIntegerField(default=0)
     total_approve_votes = models.PositiveIntegerField(default=0)
     total_reject_votes = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         abstract = True  # This makes Votable an abstract base class
@@ -156,7 +156,23 @@ class Vote(models.Model):
             self.votable.get_vote_data()
 
 
-class KeyWord(Votable):
+class Discussion(models.Model):
+    votable_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    votable_object_id = models.PositiveIntegerField()
+    votable = GenericForeignKey('votable_content_type', 'votable_object_id')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="discussion_started")
+
+
+class Comment(Votable):
+    discussion = models.ForeignKey(Discussion, on_delete=models.CASCADE, related_name="comments")
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_hidden = models.BooleanField(default=False)  # Field to check if comment is hidden
+
+
+class Keyword(Votable):
     word = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
@@ -165,18 +181,39 @@ class KeyWord(Votable):
     def get_absolute_url(self):
         return reverse('app01:keyword_detail', args=[str(self.word)])
 
+    def get_live_definition(self):
+        return self.definitions.exclude(status=Status.ALTERNATIVE.value).first()
 
-class KeyWordDefinition(Votable):
-    keyword = models.OneToOneField(KeyWord, on_delete=models.CASCADE, related_name='definition')
+    @classmethod
+    def create_definition_discussion(cls, word, creator, definition_content, comment_content):
+        with transaction.atomic():
+            keyword = cls.objects.create(word=word, creator=creator)
+            definition = Definition.objects.create(keyword=keyword, creator=creator, definition=definition_content)
+            discussion = Discussion.objects.create(
+                votable_content_type=ContentType.objects.get_for_model(definition),
+                votable_object_id=definition.id,
+                created_by=creator
+            )
+            Comment.objects.create(
+                discussion=discussion,
+                creator=creator,
+                comment=comment_content
+            )
+        return keyword
+
+
+class Definition(Votable):
+    keyword = models.ForeignKey(Keyword, on_delete=models.CASCADE, related_name='definitions')  # Changed OneToOneField to ForeignKey
     definition = models.TextField()
     questions = models.ManyToManyField('Question', related_name='keyword_definitions')
+    discussion = models.OneToOneField(Discussion, on_delete=models.CASCADE, null=True, blank=True, related_name='definition')  # New Field
 
     def __str__(self):
         return self.definition
 
 
 class QuestionTag(Votable):
-    keywords = models.ManyToManyField(KeyWord)
+    keywords = models.ManyToManyField(Keyword)
 
     def __str__(self):
         return f'{", ".join([keyword.word for keyword in self.keywords.all()])}'
@@ -190,6 +227,8 @@ class Question(Votable):
         choices=[(answer_type.name, answer_type.value) for answer_type in AnswerType],
         default=AnswerType.BINARY.name,
     )
+    discussion = models.OneToOneField(Discussion, on_delete=models.CASCADE, null=True, blank=True,
+                                      related_name='question')  # New Field
 
     def __str__(self):
         return self.question_text
@@ -205,6 +244,7 @@ class Question(Votable):
 
 class AnswerBinary(Votable):
     question_tag = models.OneToOneField(QuestionTag, on_delete=models.CASCADE, related_name="question_tag")
+
 
 
 # class AnswerInteger(models.Model):
@@ -247,7 +287,6 @@ class AnswerBinary(Votable):
 #
 # class Design:
 #     pass
-
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='userprofile')
